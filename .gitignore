@@ -8,3 +8,7 @@ data/*.tmp
 .env.*
 .DS_Store
 Thumbs.db
+
+# Local photo-processing drafts and private question images
+work/
+data/assets/

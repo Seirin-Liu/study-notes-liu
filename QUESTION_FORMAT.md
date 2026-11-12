@@ -29,3 +29,11 @@ node scripts/validate.mjs
 网页每约 2 秒检测 `data/questions.json` 的变化；也可点击“同步文件”。同 id 更新时，命令末尾加 `--replace`。修改前读取已有题目，不得用新题覆盖整个旧题库。浏览器编辑也会写回该文件，并检查版本以防覆盖 Codex 的并发修改。题目变更前的快照保存在 `data/history`，可将所需快照复制回 `data/questions.json` 恢复。
 
 公式组件检查 LaTeX 语法；化学助手检查简单方程式的原子数和电荷守恒。这些检查不能替代题目答案、推导和反应条件的学科核查。
+
+## 时间、原题号与图片兼容性
+
+当前 schema 还保留 `createdAt`（首次录入）和 `updatedAt`（最后修改）字符串。新题显式填写合法 ISO 8601 时间，例如 `2026-11-12T10:30:00+08:00`；同 id 更新由录入脚本保留已有 createdAt。上传日期筛选计划采用 createdAt，不能用 updatedAt 替代。当前尚未严格校验时间字符串，详见实现状态。
+
+原题号当前写在 question 开头，如“原卷第 7 题：……”，不要与打印自动编号混淆。当前格式不支持题图、Markdown 图片或 HTML；未知字段会在归一化保存时丢失。需要图片时必须先完成并公布正式协议，不能把 `images`、`blocks` 等规划字段直接用于现有题库。
+
+完整使用目标与图片开发要求见 `docs/PRODUCT_GOAL.md`；照片处理与写入步骤见 `docs/LOCAL_CODEX_WORKFLOW.md`；支持情况见 `docs/IMPLEMENTATION_STATUS.md`。
