@@ -61,3 +61,15 @@
 }
 
 .print-prompt { white-space: pre-wrap; }
+
+/* Separate adjacent questions within the same print column. */
+.paper-column > .print-question ~ .print-question:not(.continued) {
+  border-top: 1px solid #c9ced3;
+  padding-top: 8px;
+}
+
+.paper-head .paper-brand-dog { width: 32px; height: 32px; object-fit: contain; flex: none; }
+
+/* Bring the printed header and dog icon closer to the top edge. */
+.paper-page { padding-top: 12px; }
+.paper-page.a4 { padding-top: 15px; }

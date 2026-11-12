@@ -5,7 +5,7 @@
     {
       "id": "demo-physics-energy",
       "subject": "physics",
-      "topic": "动能与机械能",
+      "topic": "机械能守恒定律",
       "question": "质量为 \\(m\\) 的物体，速度从 \\(v_1\\) 变为 \\(v_2\\)，求合外力做的总功。",
       "answer": "\\[W_{\\text{合}}=\\Delta E_k=\\frac12 mv_2^2-\\frac12 mv_1^2\\]",
       "explanation": "根据动能定理，合外力做的总功等于动能的变化量。动能为 \\(E_k=\\frac12 mv^2\\)。",

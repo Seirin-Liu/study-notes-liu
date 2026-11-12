@@ -1,6 +1,6 @@
 /* Keep category filters compact, then reveal the remaining rows on demand. */
 .topic-options {
-  max-height: 76px;
+  max-height: 44px;
   overflow: hidden;
   align-content: flex-start;
   gap: 8px;
@@ -29,3 +29,19 @@
 .topic-expand[hidden] {
   display: none;
 }
+
+/* Keep the category choices to one row until expanded. */
+.topic-options:not(.expanded){height:44px;}
+ .date-range-select{display:inline-flex;align-items:center;gap:0;height:40px;white-space:nowrap;background:#f6f8fa;border:1px solid #d8dee4;border-radius:20px;padding:0 7px 0 14px;}
+.date-range-select>span{color:#656d76;font-size:13px;padding-right:12px;border-right:1px solid #d8dee4;}
+.date-range-select>button{border:0;background:transparent;color:#1f2328;min-width:118px;justify-content:space-between;padding:7px 8px 7px 12px;font-size:14px;}
+.date-range-select>button:hover{background:#eaeef2;border-radius:14px;}
+.date-chevron{width:8px;height:8px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-right:5px;}
+.date-menu{position:fixed;z-index:100;width:200px;max-height:min(340px,70vh);overflow-y:auto;background:#fff;border:1px solid #d8dee4;border-radius:12px;padding:6px;box-shadow:0 12px 32px #1f232822;}
+.date-menu[hidden]{display:none;}
+.date-menu button{display:flex;width:100%;justify-content:space-between;padding:9px 12px;border-radius:8px;background:transparent;color:#1f2328;font-size:14px;text-align:left;}
+.date-menu button:hover{background:#f6f8fa;}
+.date-menu button.active{background:#ddf4ff;color:#0969da;font-weight:600;}
+.date-menu button.active::after{content:'✓';}
+.custom-dates{display:flex;align-items:center;gap:6px;}
+.custom-dates[hidden]{display:none;}

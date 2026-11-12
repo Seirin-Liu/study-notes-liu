@@ -8,7 +8,7 @@
 | --- | --- |
 | `id` | 唯一标识，只含字母、数字、连字符、下划线，最多 80 字符 |
 | `subject` | `chemistry`、`biology`、`math`、`physics` |
-| `topic` | 自定义专题，必填，最多 60 字 |
+| `topic` | 必须选用 `data/topics.json` 中对应学科的一个类别，不得自定义 |
 | `question` | 原题题干与所需选项，必填 |
 | `answer` | 正确答案，字符串 |
 | `explanation` | 完整解析，字符串 |
@@ -17,6 +17,8 @@
 | `equationPlain` | 守恒核查用普通文本式；离子电荷用 `^2-`、`^+` |
 | `mastered` | `true` 或 `false` |
 | `images` | 可选题图数组，每项为 `{"file":"diagram.png","alt":"装置示意图"}`；文件放在 `data/assets/<id>/` |
+
+新增或更新题目时，先根据题意确定学科，再从 `data/topics.json` 的该学科清单中选择唯一类别。若题目跨多个知识点，按主要考查内容归类；不能确定时先询问。网页、导入脚本与题库保存都会拒绝清单外的类别。
 
 所有公式使用 LaTeX。行内使用 `\(...\)`，独立一行使用 `\[...\]`；化学式用 `\(\ce{SO4^2-}\)`。JSON 字符串中，每个反斜杠必须双写，由 JSON 解析器恢复为一个。请以 `examples/new-question.json` 的实际字节为准。
 

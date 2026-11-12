@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="vendor/katex/katex.min.css"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="image-layout.css"><link rel="stylesheet" href="category-layout.css"><link rel="stylesheet" href="brand-animation.css">
   <script src="vendor/katex/katex.min.js" defer></script><script src="vendor/katex/mhchem.min.js" defer></script>
   <script src="math-format.js" defer></script><script src="data-schema.js" defer></script><script src="chemistry.js" defer></script><script src="print-preview.js" defer></script><script src="app.js" defer></script>
-<link rel="stylesheet" href="readability.css"></head>
+<link rel="stylesheet" href="readability.css"><link rel="stylesheet" href="preview-theme.css"></head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
@@ -25,20 +25,21 @@
         <div class="workbench">
           <section class="collection-panel" id="collection-panel">
             <div class="section-heading"><div><h2 id="collection-title">全部错题</h2><span id="collection-count"></span></div><button class="text-button" id="reset-filter">重置筛选 <i data-icon="rotate"></i></button></div>
-            <div class="filter-row"><select id="status-filter" aria-label="按掌握情况筛选"><option value="">全部状态</option><option value="review">待复习</option><option value="mastered">已掌握</option></select>
-            <div class="date-filter"><span>上传时间</span><button id="today-filter" class="date-preset" type="button">当日</button><label>从 <input id="date-from" type="date" aria-label="上传开始日期"></label><label>至 <input id="date-to" type="date" aria-label="上传结束日期"></label><button id="clear-dates" class="text-button" type="button">清空日期</button></div></div>
+            <div class="filter-row"><div class="status-select"><button id="status-menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="status-menu"><span id="status-menu-label">全部状态</span><span class="date-chevron" aria-hidden="true"></span></button><select id="status-filter" hidden aria-hidden="true"><option value="">全部状态</option><option value="review">待复习</option><option value="mastered">已掌握</option></select></div>
+            <div class="date-filter"><div class="date-range-select"><span>时间维度</span><button id="date-menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="date-menu"><span id="date-menu-label">全部时间</span><span class="date-chevron" aria-hidden="true"></span></button><select id="date-preset" hidden aria-hidden="true"><option value="all">全部时间</option><option value="today">今天</option><option value="yesterday">昨天</option><option value="week">近 7 天</option><option value="month30">近 30 天</option><option value="this-month">本月</option><option value="last-month">上月</option><option value="custom">自定义</option></select></div><div id="custom-dates" class="custom-dates" hidden><label>从 <input id="date-from" type="date" aria-label="上传开始日期"></label><label>至 <input id="date-to" type="date" aria-label="上传结束日期"></label></div></div></div>
+            <div id="status-menu" class="date-menu" role="menu" hidden><button type="button" data-status="" role="menuitemradio">全部状态</button><button type="button" data-status="review" role="menuitemradio">待复习</button><button type="button" data-status="mastered" role="menuitemradio">已掌握</button></div>
+            <div id="date-menu" class="date-menu" role="menu" hidden><button type="button" data-date="all" role="menuitemradio">全部时间</button><button type="button" data-date="today" role="menuitemradio">今天</button><button type="button" data-date="yesterday" role="menuitemradio">昨天</button><button type="button" data-date="week" role="menuitemradio">近 7 天</button><button type="button" data-date="month30" role="menuitemradio">近 30 天</button><button type="button" data-date="this-month" role="menuitemradio">本月</button><button type="button" data-date="last-month" role="menuitemradio">上月</button><button type="button" data-date="custom" role="menuitemradio">自定义</button></div>
             <div class="topic-filter"><div class="filter-label">题目类别 <span id="topic-summary">全部类别</span></div><div id="topic-options-filter" class="topic-options" role="group" aria-label="按题目类别多选"></div><button id="topic-expand" class="topic-expand" type="button" aria-expanded="false" hidden>展开全部类别</button></div>
             <div class="selection-bar"><span id="selection-summary">已选 0 道</span><div><button id="select-visible" type="button">全选当前结果</button><button id="clear-selection" type="button">清空选择</button></div></div>
             <div id="overview" class="overview" hidden></div>
             <div id="question-list" class="question-list"></div>
-            <nav id="question-pagination" class="question-pagination" aria-label="题目分页"></nav>
             <nav id="question-pagination" class="question-pagination" aria-label="题目分页"></nav>
             <div class="collection-bottom"><i data-icon="info"></i><span>题目保存到本地 JSON；初始内容为示例。公式组件检查语法，解题结论仍需核对。</span></div>
           </section>
           <section class="editor-panel" id="editor-panel" hidden>
             <div class="section-heading"><div><button id="back-btn" class="icon-button" title="返回题库" aria-label="返回题库"><i data-icon="arrow-left"></i></button><h2 id="editor-heading">录入新题</h2></div><span class="editing-label">实时预览中</span></div>
             <form id="question-form">
-              <div class="form-grid"><label>学科<select id="f-subject" required></select></label><label>专题 <span class="required">*</span><input id="f-topic" list="topic-options" required maxlength="60" placeholder="选择或输入新专题"><datalist id="topic-options"></datalist></label></div>
+              <div class="form-grid"><label>学科<select id="f-subject" required></select></label><label>专题 <span class="required">*</span><select id="f-topic" required></select></label></div>
               <div class="formula-tools"><span>公式输入</span><button type="button" data-insert="fraction">分式</button><button type="button" data-insert="power">上下标</button><button type="button" data-insert="chem">化学式</button><small>先点要插入的位置</small></div>
               <label>题目 <span class="required">*</span><textarea id="f-question" rows="4" required maxlength="20000" placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea></label>
               <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000" placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000" placeholder="易错原因、记忆提示…"></textarea></label></div>
