@@ -5,6 +5,7 @@
 | 能力 | 当前状态 | 相关代码 / 后续工作 |
 | --- | --- | --- |
 | 本机启动、离线公式与字体 | 已有 | `server.mjs`、启动脚本、`dist/vendor/` |
+| macOS 启动入口 | 已有，待真机确认 | `start-local.command`，兼容 Homebrew PATH；终端可用 `sh start-local.sh`，支持自定义端口及 Node 版本检查 |
 | JSON 题库、录题命令、同步、快照和冲突检测 | 已有 | `lib/store.mjs`、`scripts/add-question.mjs` |
 | 学科、专题、关键词、掌握状态筛选 | 已有 | `dist/app.js`、`dist/index.html` |
 | B5/A4、单双栏、答案显隐、长公式分页 | 已有 | `dist/print-preview.js`，仍需图像场景回归 |

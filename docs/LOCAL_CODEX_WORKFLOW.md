@@ -4,7 +4,7 @@
 
 1. 安装 Node.js 18 或更新版本，把项目完整克隆或解压到固定文件夹。
 2. 在本地 Codex 中打开这个项目根目录，确保能读取 `AGENTS.md`。在该对话发送卷子照片；不要只打开 `dist` 子目录。
-3. Windows 双击 `start-local.cmd`；macOS/Linux 运行 `sh start-local.sh`。浏览器访问 `http://127.0.0.1:4318/`，保持终端运行。应用自身无需识图 API 密钥，也无需 npm install。
+3. Windows 双击 `start-local.cmd`；macOS 双击 `start-local.command`（或在终端运行 `sh start-local.sh`）；Linux 运行 `sh start-local.sh`。浏览器访问 `http://127.0.0.1:4318/`，保持终端运行。应用自身无需识图 API 密钥，也无需 npm install。
 4. 本地 Codex 录入后等待约两秒同步，或点击“同步文件”。若网页提示存在编辑草稿/冲突，先处理，不覆盖未保存编辑。
 
 可以直接发：
