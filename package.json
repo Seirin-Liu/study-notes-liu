@@ -1,0 +1,15 @@
+{
+  "name": "zhixu-local-notes",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Local file-backed study notebook with offline KaTeX and mhchem rendering",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "test": "node --test tests/local.test.mjs && node tests/chemistry.cjs",
+    "validate": "node scripts/validate.mjs",
+    "pack:local": "python3 scripts/package-local.py"
+  },
+  "devDependencies": {"katex": "0.16.30"},
+  "engines": {"node": ">=18"}
+}

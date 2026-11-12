@@ -1,0 +1,31 @@
+(() => {
+ 'use strict';
+ const $=id=>document.getElementById(id);let pages=[],index=0;
+ const esc=Formula.escape;
+ function fitAtoms(root,width,height=Infinity){for(const atom of root.querySelectorAll('.formula-atom')){atom.style.fontSize='';const rect=atom.getBoundingClientRect();if(rect.width>width||rect.height>height){const factor=Math.min(width/rect.width,height/rect.height,1)*.98;atom.style.fontSize=(factor*100)+'%';atom.title='长公式已按栏宽缩小；可切换为单栏查看。';}}}
+ function page(title,number,s){const e=document.createElement('div');e.className=`paper-page ${s.paper==='A4'?'a4':''} ${s.compact?'compact':''}`;e.innerHTML=`<div class="paper-head"><h3>${esc(title)}</h3><span>知序 · 本地错题本</span></div><div class="paper-columns">${Array.from({length:s.columns},()=>'<div class="paper-column"></div>').join('')}</div><div class="paper-foot"><span>${s.answers?'题目 · 答案 · 解析':'练习版 · 答案已隐藏'}</span><span>第 ${number} 页</span></div>`;return e;}
+ function blockHTML(q,n,s,names){let html=`<h4 class="print-q-title">${n}. ${esc(names[q.subject])} / ${esc(q.topic)}</h4><div class="print-body">${Formula.render(q.question||'请在左侧输入题目…')}</div>`;if(s.answers){for(const[k,label,cls]of[['answer','答案','print-answer'],['equation','方程式','print-equation'],['explanation','解析','print-explanation'],['notes','备注','print-notes']])if(q[k])html+=`<div class="${cls}"><b>${label}：</b>${k==='answer'?'<u>':''}${Formula.render(q[k],{equation:k==='equation'})}${k==='answer'?'</u>':''}</div>`;}else html+='<div class="answer-space"></div>';return html;}
+ // Formula nodes are indivisible. Only surrounding prose may break across columns/pages.
+ function units(element){const result=[];function walk(node){if(node.nodeType===3){for(const char of node.textContent)result.push(char);}else if(node.nodeType===1){if(node.classList.contains('formula-atom')||node.classList.contains('formula-error'))result.push(node);else for(const child of node.childNodes)walk(child);}}for(const n of element.childNodes)walk(n);return result;}
+ function sliceDOM(items,start,count){const f=document.createDocumentFragment();let text='';function flush(){if(text){f.append(document.createTextNode(text));text='';}}for(let i=start;i<start+count;i++){const item=items[i];if(typeof item==='string')text+=item;else{flush();f.append(item.cloneNode(true));}}flush();return f;}
+ function render(items,s,title,names){pages=[];index=0;const measure=$('measure-root');measure.replaceChildren();$('print-root').replaceChildren();$('preview-canvas').replaceChildren();$('preview-empty').hidden=!!items.length;$('print-btn').disabled=!items.length;$('print-count').textContent=items.length?items.length+' 题':'';if(!items.length){$('page-indicator').textContent='0 / 0';$('prev-page').disabled=true;$('next-page').disabled=true;return;}
+  let ci=0,current=page(title,1,s);measure.append(current);pages.push(current);let columns=current.querySelectorAll('.paper-column'),col=columns[0];
+  function advance(){ci++;if(ci>=columns.length){current=page(title,pages.length+1,s);measure.append(current);pages.push(current);columns=current.querySelectorAll('.paper-column');ci=0;}col=columns[ci];}
+  const fits=()=>col.scrollHeight<=col.clientHeight+1;
+  items.forEach((q,n)=>{const block=document.createElement('section');block.className='print-question';block.innerHTML=blockHTML(q,n+1,s,names);col.append(block);fitAtoms(block,col.clientWidth,col.clientHeight*.8);if(fits())return;block.remove();if(col.children.length){advance();col.append(block);if(fits())return;block.remove();}
+   const parts=[...block.children];let section=document.createElement('section');section.className='print-question';col.append(section);
+   for(let part of parts){section.append(part);if(fits())continue;part.remove();if(section.childNodes.length){advance();section=document.createElement('section');section.className='print-question continued';section.innerHTML=`<h4 class="print-q-title">${n+1}. ${esc(q.topic)}（续）</h4>`;col.append(section);}section.append(part);if(fits())continue;
+    const tokens=units(part);part.replaceChildren();let offset=0;
+    while(offset<tokens.length){let low=1,high=tokens.length-offset,best=0;while(low<=high){const mid=(low+high)>>1;part.replaceChildren(sliceDOM(tokens,offset,mid));if(fits()){best=mid;low=mid+1;}else high=mid-1;}
+     if(best===0){part.remove();advance();section=document.createElement('section');section.className='print-question continued';col.append(section);section.append(part);part.replaceChildren(sliceDOM(tokens,offset,1));fitAtoms(part,col.clientWidth,col.clientHeight*.8);if(!fits())throw Error('内容过高，无法完整分页，请调整公式。');best=1;}
+     part.replaceChildren(sliceDOM(tokens,offset,best));offset+=best;if(offset<tokens.length){advance();section=document.createElement('section');section.className='print-question continued';col.append(section);part=part.cloneNode(false);section.append(part);}
+    }
+   }
+  });
+  pages=pages.map(p=>p.cloneNode(true));measure.replaceChildren();for(const p of pages)$('print-root').append(p.cloneNode(true));$('dynamic-print-style').textContent=`@page { size: ${s.paper==='B5'?'176mm 250mm':'210mm 297mm'}; margin: 0; }`;$('preview-meta').textContent=`${s.paper} · ${s.columns===2?'双栏':'单栏'} · ${s.compact?'约 9 pt':'约 10 pt'}`;
+  const invalid=$('print-root').querySelector('.formula-error');$('print-btn').disabled=!!invalid;if(invalid)$('preview-meta').textContent='有公式待修正，暂不可打印';show();
+ }
+ function show(){if(!pages.length)return;const holder=document.createElement('div');holder.className='preview-page-holder';holder.append(pages[index].cloneNode(true));$('preview-canvas').replaceChildren(holder);scale();$('page-indicator').textContent=`${index+1} / ${pages.length}`;$('prev-page').disabled=index===0;$('next-page').disabled=index===pages.length-1;}
+ function scale(){const holder=document.querySelector('.preview-page-holder');if(!holder)return;const p=holder.firstElementChild,w=Math.max(100,Math.min($('preview-stage').clientWidth-22,420)),s=w/p.offsetWidth;holder.style.width=w+'px';holder.style.height=p.offsetHeight*s+'px';p.style.transform=`scale(${s})`;}
+ window.Printer={render,previous(){if(index>0){index--;show();}},next(){if(index<pages.length-1){index++;show();}},scale};
+})();

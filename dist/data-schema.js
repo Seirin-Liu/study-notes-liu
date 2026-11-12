@@ -1,0 +1,9 @@
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NoteSchema=factory();})(typeof window==='undefined'?globalThis:window,function(){
+  'use strict';
+  const subjects=['chemistry','biology','math','physics'];
+  const limits={question:20000,answer:10000,explanation:20000,notes:10000,equation:2000,equationPlain:2000};
+  function errors(q){const out=[];if(!q||typeof q!=='object'||Array.isArray(q))return ['题目必须是一个 JSON 对象'];if(!subjects.includes(q.subject))out.push('学科必须为 chemistry、biology、math 或 physics');if(typeof q.id!=='string'||!/^[-a-zA-Z0-9_]{1,80}$/.test(q.id))out.push('id 只能含英文字母、数字、连字符和下划线，长度 1—80');if(typeof q.topic!=='string'||!q.topic.trim()||q.topic.length>60)out.push('专题必填，最多 60 字');if(typeof q.question!=='string'||!q.question.trim())out.push('题目不能为空');for(const[k,n]of Object.entries(limits))if(q[k]!==undefined&&(typeof q[k]!=='string'||q[k].length>n))out.push(k+' 必须是字符串，且不超过 '+n+' 字');if(q.mastered!==undefined&&typeof q.mastered!=='boolean')out.push('mastered 必须为布尔值');return out;}
+  function normalize(q){const result={id:q.id,subject:q.subject,topic:q.topic.trim()};for(const k of Object.keys(limits))result[k]=q[k]||'';result.mastered=!!q.mastered;result.demo=!!q.demo;result.createdAt=typeof q.createdAt==='string'?q.createdAt:new Date().toISOString();result.updatedAt=typeof q.updatedAt==='string'?q.updatedAt:result.createdAt;return result;}
+  function settings(input={}){return {paper:input.paper==='A4'?'A4':'B5',columns:input.columns===1?1:2,compact:input.compact!==false,answers:input.answers!==false};}
+  return {errors,normalize,settings,subjects,limits};
+});

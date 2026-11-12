@@ -1,0 +1,10 @@
+node_modules/
+.openai/
+.sites-runtime/
+data/history/
+data/*.tmp
+*.zip
+.env
+.env.*
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+{
+  "id": "math-sequence-001",
+  "subject": "math",
+  "topic": "数列",
+  "question": "已知等比数列 \\(\\{a_n\\}\\) 中 \\(a_1=2\\)、公比 \\(q=3\\)，求 \\(a_n\\) 和前 \\(n\\) 项和 \\(S_n\\)。",
+  "answer": "\\(a_n=2\\cdot3^{n-1}\\)，\\(S_n=3^n-1\\)。",
+  "explanation": "由通项公式 \\(a_n=a_1q^{n-1}\\)，代入可得结果。再利用 \\[S_n=\\frac{a_1(1-q^n)}{1-q}=3^n-1\\]。",
+  "notes": "求和公式使用前，先判断 \\(q\\) 是否为 \\(1\\)。",
+  "equation": "",
+  "equationPlain": "",
+  "mastered": false
+}
