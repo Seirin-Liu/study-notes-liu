@@ -25,8 +25,11 @@ export function createApp({dataDirectory=process.env.ZHIXU_DATA_DIR||path.join(r
     return send(405,{error:'不支持的请求方法。'});
    }
    if(!['GET','HEAD'].includes(req.method))return send(405,{error:'不支持的请求方法。'});
-   const relative=decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname);const file=path.resolve(root,'dist','.'+relative);const publicDir=path.join(root,'dist');if(!file.startsWith(publicDir+path.sep))return send(403,{error:'路径不可访问。'});
-   const ext=path.extname(file);const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.svg':'image/svg+xml','.json':'application/json; charset=utf-8'};
+   const pageRoutes={'/':'/index.html','/overview':'/index.html','/chemistry':'/index.html','/biology':'/index.html','/math':'/index.html','/physics':'/index.html','/examples':'/format-guide.html'};const relative=decodeURIComponent(pageRoutes[url.pathname]||url.pathname);let file,publicDir;
+   if(relative.startsWith('/assets/')){const parts=relative.split('/');if(parts.length!==4||!/^[-a-zA-Z0-9_]{1,80}$/.test(parts[2])||!/^[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/i.test(parts[3]))return send(403,{error:'题图路径不可访问。'});publicDir=path.resolve(dataDirectory,'assets');file=path.resolve(publicDir,parts[2],parts[3]);}
+   else{publicDir=path.join(root,'dist');file=path.resolve(publicDir,'.'+relative);}
+   if(!file.startsWith(publicDir+path.sep))return send(403,{error:'路径不可访问。'});
+   const ext=path.extname(file).toLowerCase();const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.svg':'image/svg+xml','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};
    const bytes=await fs.readFile(file);res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'"});res.end(req.method==='HEAD'?undefined:bytes);
   }catch(e){send(e.status|| (e.code==='ENOENT'?404:500),{error:e.status?e.message:e.code==='ENOENT'?'未找到本地文件。':'本地服务发生错误，请查看终端。'});if(!e.status&&e.code!=='ENOENT')console.error(e);}
  });

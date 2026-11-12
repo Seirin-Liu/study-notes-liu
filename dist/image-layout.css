@@ -1,0 +1,61 @@
+/* Keep question images beside the text location marked in the question. */
+.question-inline-image {
+  display: block;
+  width: max-content;
+  max-width: calc(100% - 1em);
+  margin: 8px 0 10px 1em;
+  white-space: normal;
+}
+
+.question-inline-image .image-thumb {
+  display: block;
+  max-width: 100%;
+  text-align: left;
+  background: #fff;
+}
+
+.question-inline-image .image-thumb img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 360px);
+  max-height: 240px;
+  object-fit: contain;
+}
+
+.question-inline-image .image-thumb small {
+  display: block;
+  padding: 4px 6px;
+  color: #57606a;
+  font-size: 11px;
+  text-align: left;
+}
+
+.print-image {
+  max-width: 100%;
+  margin: 6px 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-image img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.paper-page.columns-2 .print-image img {
+  max-height: 68mm;
+}
+
+.paper-page.columns-1 .print-image img {
+  max-height: 105mm;
+}
+
+@media (max-width: 640px) {
+  .question-inline-image .image-thumb img {
+    max-width: min(100%, 300px);
+    max-height: 210px;
+  }
+}

@@ -11,7 +11,7 @@
 - [当前实现状态与后续开发顺序](docs/IMPLEMENTATION_STATUS.md)
 - [Codex 工作规则](AGENTS.md)与[当前题目格式](QUESTION_FORMAT.md)
 
-**当前版本已支持本地录题、学科/专题筛选和公式打印；按上传时间筛选、逐题勾选、图片保存与图文打印仍待开发。当前打印预览会展示全部筛选结果。** 后续本地 Codex 应按上述文档继续补齐，不能把规划格式直接写入当前题库。
+**当前版本支持本地录题、学科汇总、题目类别与上传时间筛选、逐题勾选、题图和公式打印；打印预览仅展示本次勾选的题目。** 题图需保存在 `data/assets/`，备份时复制整个 `data/` 文件夹。
 
 ## 在 Mac 启动
 
@@ -51,15 +51,15 @@ node scripts/add-question.mjs examples/new-question.json
 node scripts/validate.mjs
 ```
 
-完整格式见 `QUESTION_FORMAT.md`，示例见 `examples/new-question.json`。文件实际写入 `data/questions.json`，网页约每 2 秒检测一次变化，也可点击“同步文件”。同一 id 更新需加 `--replace`。
+完整格式见 `QUESTION_FORMAT.md`，示例见 `examples/new-question.json`。文件实际写入 `data/subjects/chemistry.json 等`，网页约每 2 秒检测一次变化，也可点击“同步文件”。同一 id 更新需加 `--replace`。
 
 ## 使用与数据
 
 - 四科按学科、专题、关键词和掌握状态筛选。题目、答案、解析、备注都支持公式。
 - 默认 B5 双栏紧凑排版；可切 A4、单栏、隐藏答案。按公式实际尺寸分页，公式节点不拆分。
 - 浏览器中的“保存到本地”会写回 JSON。题目修改前自动保存 `data/history/` 快照。
-- 整个 `data` 文件夹就是题库，可复制备份。页面支持 JSON 导入/导出，兼容第一版题库导出。旧版纯文本数学式需要由 Codex 转成 LaTeX 才能以公式排版。
-- 删除题目后，可把修改前的历史 JSON 复制回 `data/questions.json` 恢复。恢复前先备份当前文件。
+- 整个 `data` 文件夹包含分学科题库、设置和题图；备份或迁移时复制整个文件夹。旧版纯文本数学式需要由 Codex 转成 LaTeX 才能以公式排版。
+- 删除题目后，可把修改前的历史 JSON 复制回 `data/subjects/chemistry.json 等` 恢复。恢复前先备份当前文件。
 - 题库损坏时会报错，不会悄悄清空；并发修改会拒绝覆盖。编辑草稿另外暂存在当前浏览器。
 - 本地服务只监听回环地址，默认不向局域网或公网开放。无统计脚本、外部字体或题目上传。
 
