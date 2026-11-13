@@ -133,3 +133,12 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 .overview-mode .overview-card{background:#f1f2f4;border:1px solid #eceef1;box-shadow:none;border-radius:16px;color:#202123;}
 .overview-mode .overview-card:hover{background:#e9ebee;border-color:#e0e3e7;}
 .overview-mode .overview-card>span,.overview-mode .overview-card strong,.overview-mode .overview-card small{color:#202123;}
+
+.topic-expand{color:#3b82c4;}
+.topic-expand:hover{color:#2563a5;text-decoration:underline;}
+
+/* Keep all six subject tiles on one desktop row. */
+.overview-mode .overview-grid{grid-template-columns:repeat(6,minmax(0,1fr));}
+@media(max-width:1200px){.overview-mode .overview-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:640px){.overview-mode .overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
