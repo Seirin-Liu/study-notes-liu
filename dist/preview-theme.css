@@ -118,3 +118,18 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 
 
 .editor-panel #f-topic:focus-visible{outline:2px solid #9ca3af;outline-offset:2px;}
+.editor-panel .form-grid>label{gap:8px;}
+.editor-panel .form-grid .field-label{display:block;min-height:22px;line-height:22px;}
+.editor-panel .form-grid select{margin:0;width:100%;min-height:42px;}
+.editor-panel .form-grid select:focus,.editor-panel .form-grid select:focus-visible{outline:none;box-shadow:0 0 0 2px #8ba7c733;border-color:#8ba7c7;}
+
+/* Keep the overview focused on its statistics. */
+.overview-mode:not(.editing-mode) .page-heading{display:none;}
+.overview-mode .overview-card{background:#f3f4f6;border-color:#e5e7eb;}
+.overview-mode .overview-card:hover{background:#eceef1;border-color:#cbd0d7;}
+
+/* Overview subject cards: uniform soft gray tiles. */
+.overview-mode .overview-grid{gap:18px;}
+.overview-mode .overview-card{background:#f1f2f4;border:1px solid #eceef1;box-shadow:none;border-radius:16px;color:#202123;}
+.overview-mode .overview-card:hover{background:#e9ebee;border-color:#e0e3e7;}
+.overview-mode .overview-card>span,.overview-mode .overview-card strong,.overview-mode .overview-card small{color:#202123;}

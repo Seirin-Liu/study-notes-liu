@@ -17,6 +17,10 @@
   opacity: 0;
 }
 
+.brand-mark .brand-dog-angry {
+  opacity: 0;
+}
+
 .brand-mark.is-wave .brand-dog-base {
   opacity: 0;
 }
@@ -28,6 +32,11 @@
 .brand-mark.is-bouncing {
   animation: brand-wiggle 720ms ease-in-out;
 }
+
+.brand-mark.is-angry .brand-dog-base,
+.brand-mark.is-angry .brand-dog-wave { opacity: 0; }
+
+.brand-mark.is-angry .brand-dog-angry { opacity: 1; }
 
 @keyframes brand-wiggle {
   0%, 100% { transform: rotate(0) scale(1); }

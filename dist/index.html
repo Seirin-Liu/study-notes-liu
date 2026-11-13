@@ -11,7 +11,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="/overview" aria-label="返回错题本首页并挥爪"><span class="brand-mark"><img class="brand-dog-frame brand-dog-base" src="brand-dog.png" alt=""><img class="brand-dog-frame brand-dog-wave" src="brand-dog-wave.png" alt=""></span></a>
+      <a class="brand" href="/overview" aria-label="返回错题本首页并挥爪"><span class="brand-mark"><img class="brand-dog-frame brand-dog-base" src="brand-dog.png" alt=""><img class="brand-dog-frame brand-dog-wave" src="brand-dog-wave.png" alt=""><img class="brand-dog-frame brand-dog-angry" src="brand-dog-angry.png" alt=""></span></a>
       <nav id="subject-nav" aria-label="学科导航"></nav>
       <a class="guide-link" href="/examples">Codex 问答示例 ↗</a>
       <div class="sidebar-bottom">
@@ -39,7 +39,7 @@
           <section class="editor-panel" id="editor-panel" hidden>
             <div class="section-heading"><div><button id="back-btn" class="icon-button" title="返回题库" aria-label="返回题库"><i data-icon="arrow-left"></i></button><h2 id="editor-heading">录入新题</h2></div><span class="editing-label">实时预览中</span></div>
             <form id="question-form">
-              <div class="form-grid"><label>学科<select id="f-subject" required></select></label><label>专题 <span class="required">*</span><select id="f-topic" required></select></label></div>
+              <div class="form-grid"><label><span class="field-label">学科</span><select id="f-subject" required></select></label><label><span class="field-label">专题 <span class="required">*</span></span><select id="f-topic" required></select></label></div>
               <div class="formula-tools"><span>公式输入</span><button type="button" data-insert="fraction">分式</button><button type="button" data-insert="power">上下标</button><button type="button" data-insert="chem">化学式</button><small>先点要插入的位置</small></div>
               <label>题目 <span class="required">*</span><textarea id="f-question" rows="4" required maxlength="20000" placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea></label>
               <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000" placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000" placeholder="易错原因、记忆提示…"></textarea></label></div>
