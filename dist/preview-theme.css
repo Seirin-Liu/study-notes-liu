@@ -97,3 +97,24 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 .card-answer{background:#eef4fc;border:1px solid #dbe8f8;color:#355477;}
 .card-answer b{color:#28517c;}
 
+
+/* Thirty local calendar days, including today. */
+.daily-chart{border:1px solid #e5e7eb;border-radius:9px;padding:22px 24px;margin-bottom:20px;background:#fff;}
+.daily-chart .chart-heading{margin-bottom:18px;}
+.daily-bars{height:178px;display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:5px;border-bottom:1px solid #e5e7eb;}
+.daily-day{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;}
+.daily-bar-track{width:100%;height:148px;display:flex;align-items:flex-end;justify-content:center;}
+.daily-bar{display:block;width:min(100%,24px);min-height:3px;border-radius:4px 4px 0 0;background:#e5e7eb;}
+.daily-bar.has-data{background:#91a9c8;}
+.daily-day:hover .daily-bar.has-data{background:#5d7fa9;}
+.daily-tick{height:24px;padding-top:6px;color:#6b7280;font-size:10px;white-space:nowrap;}
+@media(max-width:640px){.daily-chart{padding:16px 12px}.daily-bars{gap:2px;height:152px}.daily-bar-track{height:125px}.daily-tick{font-size:8px}}
+
+/* Put subject totals before the overall summary and charts. */
+#overview{display:flex;flex-direction:column;}
+#overview .overview-grid{order:-1;margin-bottom:20px;}
+.daily-bar.has-data{background:#4f8fdc;}
+.daily-day:hover .daily-bar.has-data{background:#2f73c7;}
+
+
+.editor-panel #f-topic:focus-visible{outline:2px solid #9ca3af;outline-offset:2px;}
