@@ -25,7 +25,7 @@ export function createApp({dataDirectory=process.env.ZHIXU_DATA_DIR||path.join(r
     return send(405,{error:'不支持的请求方法。'});
    }
    if(!['GET','HEAD'].includes(req.method))return send(405,{error:'不支持的请求方法。'});
-   const pageRoutes={'/':'/index.html','/overview':'/index.html','/chemistry':'/index.html','/biology':'/index.html','/math':'/index.html','/physics':'/index.html','/chinese':'/index.html','/english':'/index.html','/examples':'/format-guide.html'};const relative=decodeURIComponent(pageRoutes[url.pathname]||(/^\/(chemistry|biology|math|physics)\/edit\/(new|[-a-zA-Z0-9_]+)$/.test(url.pathname)?'/index.html':url.pathname));let file,publicDir;
+   const pageRoutes={'/':'/index.html','/overview':'/index.html','/chemistry':'/index.html','/biology':'/index.html','/math':'/index.html','/physics':'/index.html','/chinese':'/index.html','/english':'/index.html','/examples':'/format-guide.html'};const relative=decodeURIComponent(pageRoutes[url.pathname]||(/^\/(chemistry|biology|math|physics|chinese|english)\/edit\/(new|[-a-zA-Z0-9_]+)$/.test(url.pathname)?'/index.html':url.pathname));let file,publicDir;
    if(relative.startsWith('/assets/')){const parts=relative.split('/');if(parts.length!==4||!/^[-a-zA-Z0-9_]{1,80}$/.test(parts[2])||!/^[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/i.test(parts[3]))return send(403,{error:'题图路径不可访问。'});publicDir=path.resolve(dataDirectory,'assets');file=path.resolve(publicDir,parts[2],parts[3]);}
    else{publicDir=path.join(root,'dist');file=path.resolve(publicDir,'.'+relative);}
    if(!file.startsWith(publicDir+path.sep))return send(403,{error:'路径不可访问。'});
