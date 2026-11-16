@@ -6,7 +6,7 @@
       "id": "chemistry-upload-20261112-organic-q8",
       "subject": "chemistry",
       "topic": "有机化学基础",
-      "question": "原卷第（8）问：根据下列转化，写出H的结构简式。\n[[image:organic.jpg]]\nH的分子式为\\(\\ce{C9H9NO}\\)。",
+      "question": "原卷第（8）问：根据下列转化，写出H的结构简式。\n[[image:organic.jpg]]\nH的分子式为\\(\\ce{C9H9NO}\\)。[[image:organic.jpg]]",
       "answer": "\n\n",
       "explanation": "",
       "notes": "羟醛缩合。",
@@ -18,10 +18,10 @@
           "alt": "原题图"
         }
       ],
-      "mastered": false,
+      "mastered": true,
       "demo": false,
       "createdAt": "2026-11-12T20:57:36.623059+08:00",
-      "updatedAt": "2026-11-12T13:08:00.011Z"
+      "updatedAt": "2026-11-16T16:11:08.772Z"
     },
     {
       "id": "chemistry-upload-20261112-organic-q7",

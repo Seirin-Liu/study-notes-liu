@@ -7,7 +7,12 @@ import path from 'node:path';
 import {LocalStore} from '../lib/store.mjs';
 import {Formula,Schema,formulaErrors} from '../lib/formula-engine.mjs';
 import {createApp} from '../server.mjs';
-const fixture=JSON.parse(await fs.readFile(new URL('../data/questions.json',import.meta.url),'utf8'));
+const rawFixture=JSON.parse(await fs.readFile(new URL('../data/questions.json',import.meta.url),'utf8'));
+const currentTopics={
+ '离子反应方程式':'离子反应','实验题':'化学实验','氮与氨':'元素化合物（钠、铝、铁、铜、氯、硫、氮、碳等）',
+ '细胞的结构与功能':'细胞的结构与物质运输','动能与机械能':'机械能守恒定律'
+};
+const fixture={...rawFixture,questions:rawFixture.questions.map(question=>({...question,topic:currentTopics[question.topic]||question.topic}))};
 async function temporary(){const directory=await fs.mkdtemp(path.join(os.tmpdir(),'zhixu-test-'));await fs.writeFile(path.join(directory,'questions.json'),JSON.stringify(fixture));return {directory,store:new LocalStore(directory),cleanup:()=>fs.rm(directory,{recursive:true,force:true})};}
 test('bundled engine renders fractions, powers, roots, sums and chemical ions',()=>{
  for(const tex of [String.raw`\(\frac{a_1(1-q^n)}{1-q}\)`,String.raw`\(a_n^2=\sqrt{n}\)`,String.raw`\[\sum_{k=1}^n k=\frac{n(n+1)}2\]`,String.raw`\(\ce{S2O3^2- + 2H+ -> S v + SO2 ^ + H2O}\)`]){assert.deepEqual(Formula.check(tex),[]);assert.match(Formula.render(tex),/class="katex"/);assert.match(Formula.render(tex),/<math/);}
@@ -28,7 +33,12 @@ test('invalid formula never overwrites valid disk data',async()=>{
  const t=await temporary();try{const before=await t.store.read();const q={...before.questions[0],answer:String.raw`\(\badcommand\)`};await assert.rejects(t.store.save({...before,questions:[q,...before.questions.slice(1)]},before.revision),{status:422});assert.equal((await t.store.read()).revision,before.revision);}finally{await t.cleanup();}
 });
 test('external changes load; invalid JSON is never silently replaced',async()=>{
- const t=await temporary();try{const a=await t.store.read();await fs.writeFile(t.store.file,JSON.stringify({...fixture,questions:[{...fixture.questions[0],notes:'Codex update'}]}));const b=await t.store.read();assert.notEqual(a.revision,b.revision);assert.equal(b.questions[0].notes,'Codex update');await fs.writeFile(t.store.file,'invalid JSON');await assert.rejects(t.store.read(),{status:422});assert.equal(await fs.readFile(t.store.file,'utf8'),'invalid JSON');}finally{await t.cleanup();}
+ const t=await temporary();try{
+  const a=await t.store.read(),question={...fixture.questions[0],notes:'Codex update'},file=t.store.subjectFile(question.subject);
+  await fs.writeFile(file,JSON.stringify({version:2,subject:question.subject,questions:[question]}));
+  const b=await t.store.read();assert.notEqual(a.revision,b.revision);assert.equal(b.questions[0].notes,'Codex update');
+  await fs.writeFile(file,'invalid JSON');await assert.rejects(t.store.read(),{status:422});assert.equal(await fs.readFile(file,'utf8'),'invalid JSON');
+ }finally{await t.cleanup();}
 });
 test('local API serves offline assets, saves files and rejects unsafe or stale requests',async()=>{
  const t=await temporary();const server=createApp({dataDirectory:t.directory});await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
