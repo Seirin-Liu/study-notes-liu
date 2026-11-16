@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {randomUUID} from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -14,6 +15,18 @@ export function createApp({dataDirectory=process.env.ZHIXU_DATA_DIR||path.join(r
    if(req.headers.origin&&req.headers.origin!==url.origin)return send(403,{error:'拒绝跨站访问本地题库。'});
    if(req.headers['sec-fetch-site']==='cross-site')return send(403,{error:'拒绝跨站访问本地题库。'});
    if(url.pathname==='/api/health')return send(200,{ok:true,mode:'local-files',version:2});
+   const upload=url.pathname.match(/^\/api\/assets\/([-a-zA-Z0-9_]{1,80})$/);
+   if(upload&&req.method==='POST'){
+    if(req.headers['x-zhixu-local']!=='1')return send(403,{error:'本地图片上传请求格式不正确。'});
+    const chunks=[];let size=0;
+    for await(const chunk of req){size+=chunk.length;if(size>10*1024*1024)return send(413,{error:'单张图片不能超过10 MB。'});chunks.push(chunk);}
+    const bytes=Buffer.concat(chunks);
+    const ext=bytes.length>=24&&bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'))?'png':bytes.length>=4&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255?'jpg':bytes.length>=16&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP'?'webp':null;
+    if(!ext)return send(422,{error:'请选择有效的PNG、JPEG或WebP图片。'});
+    const file='image-'+randomUUID()+'.'+ext,dir=path.join(dataDirectory,'assets',upload[1]);
+    await fs.mkdir(dir,{recursive:true});await fs.writeFile(path.join(dir,file),bytes,{flag:'wx'});
+    return send(201,{file});
+   }
    if(url.pathname==='/api/library'){
     if(req.method==='GET')return send(200,await store.read());
     if(req.method==='PUT'){

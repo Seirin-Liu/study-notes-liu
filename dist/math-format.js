@@ -4,8 +4,10 @@
   const sub={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9'};
   const sup={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁺':'+','⁻':'-'};
   function chemicalSource(s){return String(s).replace(/[₀-₉]/g,c=>sub[c]).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]+/g,t=>'^'+[...t].map(c=>sup[c]).join('')).replace(/⇌/g,' <=> ').replace(/→/g,' -> ').replace(/↑/g,' ^ ').replace(/↓/g,' v ');}
+  // Copied JSON/Markdown may double-escape math delimiters. Keep TeX row breaks intact.
+  function normalizeDelimiters(source){return String(source??'').replace(/\\{2,}([()[\]])/g,'\\$1');}
   function tokenize(source,equation=false){
-    source=String(source??'');
+    source=normalizeDelimiters(source);
     if(equation&&source.trim()&&!source.includes('\\(')&&!source.includes('\\['))source='\\(\\ce{'+chemicalSource(source)+'}\\)';
     const tokens=[];let offset=0;
     while(offset<source.length){
@@ -26,5 +28,5 @@
   }
   function render(source,options={}){return tokenize(source,options.equation).map(renderToken).join('');}
   function check(source,options={}){const errors=[];for(const t of tokenize(source,options.equation)){if(t.type==='text')continue;try{if(t.error)throw Error(t.error);katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20});}catch(e){errors.push(e.message.replace(/^KaTeX parse error: /,''));}}return errors;}
-  return {render,check,tokenize,escape};
+  return {render,check,tokenize,escape,normalizeDelimiters};
 });

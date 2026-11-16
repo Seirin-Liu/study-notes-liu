@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
+  <base href="/">
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#263f37"><meta name="description" content="比格多栋错题本">
   <title>错题本</title>
   <link rel="stylesheet" href="/vendor/katex/katex.min.css"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/image-layout.css"><link rel="stylesheet" href="/category-layout.css"><link rel="stylesheet" href="/brand-animation.css">
   <script src="/vendor/katex/katex.min.js" defer></script><script src="/vendor/katex/mhchem.min.js" defer></script>
-  <script src="/math-format.js" defer></script><script src="/data-schema.js" defer></script><script src="/chemistry.js" defer></script><script src="/print-preview.js" defer></script><script src="/app.js" defer></script>
+  <script src="/math-format.js" defer></script><script src="/data-schema.js" defer></script><script src="/chemistry.js" defer></script><script src="/print-preview.js" defer></script><script src="/editor-images.js" defer></script><script src="/app.js" defer></script>
 <link rel="stylesheet" href="/readability.css"><link rel="stylesheet" href="/preview-theme.css"></head>
 <body>
   <div class="app-shell">
@@ -42,6 +43,7 @@
               <div class="form-grid"><label><span class="field-label">学科</span><select id="f-subject" required></select></label><label><span class="field-label">专题 <span class="required">*</span></span><select id="f-topic" required></select></label></div>
               <div class="formula-tools"><span>公式输入</span><button type="button" data-insert="fraction">分式</button><button type="button" data-insert="power">上下标</button><button type="button" data-insert="chem">化学式</button><small>先点要插入的位置</small></div>
               <label>题目 <span class="required">*</span><textarea id="f-question" rows="4" required maxlength="20000" placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea></label>
+              <section class="editor-images"><h3>题目图片</h3><label>添加图片<input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" multiple></label><p class="field-help">支持PNG、JPEG、WebP，每张不超过10 MB。保存到本地后生效。</p><div id="editor-image-list"></div><p id="image-message" role="status"></p></section>
               <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000" placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000" placeholder="易错原因、记忆提示…"></textarea></label></div>
               <label>解析<textarea id="f-explanation" rows="4" maxlength="20000" placeholder="写下解题思路，为什么对，为什么错。"></textarea></label>
               <section id="chemistry-panel" class="chemistry-panel">

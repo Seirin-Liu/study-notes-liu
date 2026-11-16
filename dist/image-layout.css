@@ -73,3 +73,5 @@
 /* Bring the printed header and dog icon closer to the top edge. */
 .paper-page { padding-top: 12px; }
 .paper-page.a4 { padding-top: 15px; }
+
+.editor-images{border:1px solid #ddd;padding:14px;border-radius:12px;margin:14px 0}.editor-images h3{margin:0 0 10px}.editor-image-card{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid #eee}.editor-image-card img{width:100px;height:80px;object-fit:contain;background:white}.editor-image-card .image-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.editor-image-card input[type=file]{max-width:220px}.editor-image-card button{padding:6px 10px}#image-message{color:#8b463b}
