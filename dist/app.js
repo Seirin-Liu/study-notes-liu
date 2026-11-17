@@ -39,6 +39,10 @@
   $('question-pagination').onclick=e=>{const button=e.target.closest('[data-page]');if(!button||button.disabled)return;currentPage=Number(button.dataset.page);renderList();};
   const mascotReactions=[
     {motion:'original',file:'brand-dog.png',clickFile:'brand-dog-wave.png',name:'挥拳的比格多栋',src:'/brand-dog.png'},
+    {motion:'pleading',file:'beagle-ok-hi.png',clickFile:'beagle-ok-hi.png',name:'比格多栋比心',src:'/mascots/beagle-ok-hi.png'},
+    {motion:'crying',file:'beagle-crying-hi.png',clickFile:'beagle-crying-hi.png',name:'爆哭的比格多栋·高清',src:'/mascots/beagle-crying-hi.png'},
+    {motion:'flying',file:'beagle-drink-hi.png',clickFile:'beagle-drink-hi.png',name:'喝水的比格多栋',src:'/mascots/beagle-drink-hi.png'},
+    {motion:'smug',file:'beagle-fist-hi.png',clickFile:'beagle-fist-hi.png',name:'举拳的比格多栋',src:'/mascots/beagle-fist-hi.png'},
     {motion:'smug',file:'beagle-smug.png',name:'得意的比格多栋'},
     {motion:'crying',file:'beagle-crying.png',name:'爆哭的比格多栋'},
     {motion:'sad',file:'beagle-sad.png',name:'委屈的比格多栋'},
@@ -106,6 +110,7 @@
   function titleFor(items){return (selectedSubject?subject(selectedSubject).name:'我的')+'错题专题集'+(topicFilters.size===1?' · '+[...topicFilters][0]:'');}
   async function updatePreview(){clearTimeout(previewTimer);try{await Printer.render(editing?[draft()]:selectedSubject?selectedQuestions():[],state.settings,editing?subject($('f-subject').value).name+'错题专题集':titleFor(),Object.fromEntries(subjects.map(s=>[s.id,s.name])));}catch(e){$('preview-meta').textContent='预览失败：'+e.message;$('print-btn').disabled=true;}}
   $('prev-page').onclick=()=>Printer.previous();$('next-page').onclick=()=>Printer.next();window.addEventListener('resize',Printer.scale);window.addEventListener('resize',()=>{if(selectedSubject)renderTopics();});$('print-btn').onclick=async()=>{await updatePreview();if(!$('print-btn').disabled)window.print();};
+  $('preview-btn').onclick=async()=>{if($('print-btn').disabled)await updatePreview();const source=$('preview-canvas').querySelector('.preview-page-holder');if(!source){toast('请先勾选题目后再预览。');return;}const dialog=$('pdf-preview-dialog'),body=$('pdf-preview-dialog-body');body.replaceChildren(source.cloneNode(true));dialog.showModal();};$('pdf-preview-close').onclick=()=>$('pdf-preview-dialog').close();
   document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>{const snippets={fraction:'\\(\\frac{a}{b}\\)',power:'\\(a_n^2\\)',chem:'\\(\\ce{H2O}\\)'};editorImages.insertText(snippets[b.dataset.insert]);});
   function subjectFromPath(){const name=location.pathname.split('/')[1];return subjects.some(s=>s.id===name)?name:'';}
   function routeEditor(){const match=location.pathname.match(/^\/(chemistry|biology|math|physics|chinese|english)\/edit\/(new|[-a-zA-Z0-9_]+)$/);return match?{subject:match[1],id:match[2]}:null;}
