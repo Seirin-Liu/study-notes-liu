@@ -54,11 +54,15 @@
       };
       if (document.createElement) this.setupEditors();
       if ($('insert-image')) $('insert-image').onclick = () => this.openPicker();
+      document.querySelectorAll?.('[data-insert-image-field]').forEach(button => {
+        button.onclick = () => this.openPicker(button.dataset.insertImageField);
+      });
       if ($('image-picker-list')) $('image-picker-list').onclick = e => {
         const button = e.target.closest('[data-pick-image]');
         if (!button) return;
         const item = this.items[Number(button.dataset.pickImage)];
         if (!item) return;
+        this.active = this.pickerEntry;
         $('image-picker').close();
         this.insertText(ImageReferences.marker(item.file));
       };
@@ -256,7 +260,7 @@
       this.changed();
     }
 
-    async add(file, index) {
+    async add(file, index, {preserveName = false} = {}) {
       if (file.size > 10 * 1024 * 1024) throw Error('单张图片不能超过10 MB。');
       if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw Error('请选择PNG、JPEG或WebP图片。');
       if (index === undefined && this.items.length >= 20) throw Error('每道题最多20张图片。');
@@ -274,8 +278,8 @@
       });
       const previous = this.items[index];
       const item = {
-        file: 'pending-' + crypto.randomUUID() + '.' + ({'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp'}[file.type]),
-        alt: file.name.replace(/\.[^.]+$/, '').slice(0, 180) || '未命名',
+        file: 'pending-' + Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('') + '.' + ({'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp'}[file.type]),
+        alt: preserveName && previous ? previous.alt : file.name.replace(/\.[^.]+$/, '').slice(0, 180) || '未命名',
         placement: previous ? previous.placement : 'manual', pending: file, preview
       };
       if (index === undefined) this.items.push(item);
@@ -286,13 +290,14 @@
 
     render() {
       $('editor-image-list').innerHTML = this.items.length ? this.items.map((item, index) =>
-        '<article class="editor-image-card"><div class="editor-image-thumbnail"><img src="' + escape(this.source(item)) + '" alt="' + escape(this.label(index)) + '"></div><div class="editor-image-details"><p class="editor-image-title" title="' + escape(this.label(index)) + '">' + escape(this.label(index)) + '</p><label class="image-name-label"><span>名称</span><input type="text" maxlength="180" data-image-name="' + index + '" value="' + escape(item.alt) + '" aria-label="图片' + (index + 1) + '名称"></label><div class="image-actions"><label class="replace-image">替换图片<input type="file" accept="image/png,image/jpeg,image/webp" data-replace-image="' + index + '" aria-label="替换图片' + (index + 1) + '"></label><button type="button" data-remove-image="' + index + '">删除</button></div></div></article>'
+        '<article class="editor-image-card"><div class="editor-image-thumbnail"><img src="' + escape(this.source(item)) + '" alt="' + escape(this.label(index)) + '"></div><div class="editor-image-details"><p class="editor-image-title" title="' + escape(this.label(index)) + '">' + escape(this.label(index)) + '</p><label class="image-name-label"><span>名称</span><input type="text" maxlength="180" data-image-name="' + index + '" value="' + escape(item.alt) + '" aria-label="图片' + (index + 1) + '名称"></label><div class="image-actions"><label class="replace-image">替换图片<input type="file" accept="image/png,image/jpeg,image/webp" data-replace-image="' + index + '" aria-label="替换图片' + (index + 1) + '"></label><button type="button" data-process-image="' + index + '">处理图片</button><button type="button" data-remove-image="' + index + '">删除</button></div></div></article>'
       ).join('') : '<p class="image-shelf-empty">还没有图片，上传后可从上方插入到题目、答案、解析或备注。</p>';
       if ($('editor-image-count')) $('editor-image-count').textContent = this.items.length + ' / 20';
     }
 
-    openPicker() {
-      const field = this.active?.field || 'question';
+    openPicker(targetField) {
+      this.pickerEntry = this.editors.get(targetField) || this.active || this.editors.get('question');
+      const field = this.pickerEntry?.field || 'question';
       $('image-picker-target').textContent = '插入到' + labels[field] + '的光标位置';
       $('image-picker-list').innerHTML = this.items.length ? this.items.map((item, index) =>
         '<button class="image-picker-card" type="button" data-pick-image="' + index + '"><img src="' + escape(this.source(item)) + '" alt=""><span>' + escape(this.label(index)) + '</span></button>'

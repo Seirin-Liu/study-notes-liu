@@ -18,9 +18,17 @@
 - 开始录题或开发前阅读 `docs/PRODUCT_GOAL.md`（目标和验收）、`docs/LOCAL_CODEX_WORKFLOW.md`（接管与录题流程）、`docs/IMPLEMENTATION_STATUS.md`（已实现与缺口）。题目协议仍以 `QUESTION_FORMAT.md` 和实际 schema 为准。
 - 最终交互：先选学科，在当前学科按上传时间和错题分类筛选，再勾选本次题目，右侧只生成所选题目的打印预览。上传时间指首次录入时间；分类先沿用 topic。详细选择规则见目标文档。
 - 必要的非公式图像由 Codex 裁取或准确重绘，持久保存在项目内；需保留关键标注，并在对应位置参与打印排版。无法辨认先询问，不得编造图像信息。
+- 录入照片题图时，先裁去无关区域、转正并校正倾斜，再做黑白灰度和清晰化处理；保留原图的线条、标注与关键信息。
 - 日期筛选、逐题选择和基础题图协议已实现。题图使用 `images` 文件名数组与正文 `[[image:文件名]]` 位置标记；按 `QUESTION_FORMAT.md` 保存并验证，复杂图文分页仍需人工检查。
 - 录题用 `work/` 保存中间 JSON；持久题图放在 `data/assets/<question-id>/`。不得把临时路径作为题图引用。备份包含整个 data；图片不能随意删除，以免破坏历史快照。
 - 不自动提交、推送本地照片、题库或图像。应用代码开发可以在用户授权范围内提交；默认仍保持本地运行。
+
+## 前端源码与构建
+
+- 前端源码在 `src/app/*.js`，按职责分为 9 个模块（core / format / render / mascot / selection / editor / preview / rich-text / boot）。**改前端逻辑请改 `src/app/`，不要直接改 `dist/app.js`**，后者由构建覆盖。
+- 改完运行 `npm run build`（即 `node scripts/build-app.mjs`）生成 `dist/app.js`。它是单个 IIFE，所有模块共享同一闭包，浏览器仍只加载一个 `/app.js`，不使用全局变量。
+- `tests/build.test.cjs` 会检查 `dist/app.js` 与 `src/app/` 是否同步；忘记构建时测试失败。
+- 不改录题数据协议；前端改动后需跑 `node --test tests/*.test.cjs tests/*.test.mjs` 与 `node scripts/validate.mjs`。
 
 ## 平台支持
 

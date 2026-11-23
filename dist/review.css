@@ -1,0 +1,162 @@
+/* 随机复习页：与题库页保持同一套视觉语言 */
+
+#review-nav { box-sizing: border-box; text-decoration: none; }
+#library-workbench[hidden], #review-panel[hidden] { display: none !important; }
+
+/* 面板占满内容区，不再固定 900px */
+#review-panel {
+  max-width: none;
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+#review-title {
+  margin: 0 0 20px;
+  font-size: 22px;
+  font-weight: 650;
+  color: #1f2328;
+}
+
+/* 选项区：下拉与按钮底部严格对齐，统一 42px 高 */
+.review-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  background: #f6f7f8;
+  border: 1px solid #e4e6e9;
+  border-radius: 9px;
+}
+.review-options > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: flex-end;
+  /* 清除全局 form label 的 15px 下边距，否则按钮底边会被推低 */
+  margin: 0;
+  align-items: stretch;
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 550;
+}
+.review-options select,
+.review-options > button {
+  box-sizing: border-box;
+  height: 42px;
+  min-height: 42px;
+  font-size: 14px;
+  border-radius: 9px;
+}
+.review-options select {
+  padding: 0 32px 0 12px;
+  border: 1px solid #d9d9df;
+  background-color: #fff;
+  color: #1f2328;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.review-options select:focus,
+.review-options select:hover { border-color: #8fc2ff; outline: none; }
+.review-options > button.primary {
+  margin: 0;
+  padding: 0 20px;
+}
+#review-subject { min-width: 140px; }
+#review-count { min-width: 88px; }
+
+/* 状态提示 */
+#review-status {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 进度条 */
+#review-progress { margin: 0 0 18px; }
+#review-progress label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #4b5563;
+}
+/* 进度条：自定义蓝色填充，避免浏览器默认绿色 */
+#review-progress-bar {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e9ecef;
+}
+#review-progress-bar::-webkit-progress-bar{background:#e9ecef;border-radius:3px}
+#review-progress-bar::-webkit-progress-value{background:#0969da;border-radius:3px;transition:width .2s ease}
+#review-progress-bar::-moz-progress-bar{background:#0969da;border-radius:3px}
+
+/* 题目卡片 */
+.review-card {
+  background: #fff;
+  border: 1px solid #e4e6e9;
+  border-radius: 9px;
+  padding: 18px 20px;
+}
+.review-card h2 {
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: #1f2328;
+}
+.review-solution { margin: 16px 0 0; }
+.review-solution summary {
+  cursor: pointer;
+  color: #0969da;
+  font-size: 15px;
+  font-weight: 550;
+  user-select: none;
+}
+.review-solution > div {
+  margin-top: 12px;
+  font-size: 16px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: #374151;
+}
+.review-solution b {
+  display: block;
+  margin-bottom: 4px;
+  color: #1f2328;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* 翻页 */
+#review-pagination:not([hidden]) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+#review-pagination button { min-height: 38px; border-radius: 8px; font-size: 13px; }
+
+@media (max-width: 640px) {
+  #review-panel { padding: 16px 14px; }
+  .review-options { padding: 14px; gap: 12px; }
+  .review-options > label { flex: 1 1 calc(50% - 6px); }
+  .review-options select { width: 100%; }
+  .review-options > button.primary { flex: 1 1 100%; width: 100%; }
+}
+
+@media print { #review-panel { display: none !important; } }

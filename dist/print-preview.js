@@ -11,15 +11,37 @@
  function renderedImages(q,s){const used=new Set(['question','answer','equation','explanation','notes'].filter(key=>shown(s,key)).flatMap(key=>ImageReferences.parts(q[key]).filter(part=>part.type==='image').map(part=>part.file)));const fallback=new Set(ImageReferences.unplaced(q).map(image=>image.file));return (q.images||[]).filter(image=>used.has(image.file)||fallback.has(image.file));}
  function blockHTML(q,n,s,names){let html=`<div class="print-prompt"><h4 class="print-q-title">${n}. ${esc(names[q.subject])} / ${esc(q.topic)}</h4><div class="print-body">${rich(q,'question')||'请在左侧输入题目…'}</div></div>`;for(const[k,label,cls]of[['answer','答案','print-answer'],['equation','方程式','print-equation'],['explanation','解析','print-explanation'],['notes','备注','print-notes']])if(q[k]&&shown(s,k)){const underline=k==='answer'&&!q.answer.includes('[[image:');html+=`<div class="${cls}"><b>${label}：</b>${underline?'<u>':''}${rich(q,k)}${underline?'</u>':''}</div>`;}if(!['answer','explanation','notes'].some(key=>shown(s,key)))html+='<div class="answer-space"></div>';return html;}
  // Formula nodes are indivisible. Only surrounding prose may break across columns/pages.
- function units(element){const result=[];function walk(node){if(node.nodeType===3){for(const char of node.textContent)result.push(char);}else if(node.nodeType===1){if(node.classList.contains('formula-atom')||node.classList.contains('formula-error')||node.classList.contains('print-q-title')||node.matches('img,figure'))result.push(node);else for(const child of node.childNodes)walk(child);}}for(const n of element.childNodes)walk(n);return result;}
- function sliceDOM(items,start,count){const f=document.createDocumentFragment();let text='';function flush(){if(text){f.append(document.createTextNode(text));text='';}}for(let i=start;i<start+count;i++){const item=items[i];if(typeof item==='string')text+=item;else{flush();f.append(item.cloneNode(true));}}flush();return f;}
+ function units(element){const result=[];const FORMAT=new Set(['STRONG','U','B','EM','I','MARK','SPAN']);
+ // 每个字符记录其所在的格式标签链，重组时可还原
+ function walk(node,chain){
+  if(node.nodeType===3){for(const char of node.textContent)result.push(char?{char,chain}:char);return;}
+  if(node.nodeType!==1)return;
+  if(node.classList.contains('formula-atom')||node.classList.contains('formula-error')||node.classList.contains('print-q-title')||node.matches('img,figure')){result.push(node);return;}
+  const inline=FORMAT.has(node.tagName.toUpperCase())&&!node.classList.contains('formula-atom')&&!node.classList.contains('print-image');
+  const next=inline?[...chain,node]:chain;
+  for(const child of node.childNodes)walk(child,next);
+ }
+ for(const n of element.childNodes)walk(n,[]);
+ return result;
+}
+ function sliceDOM(items,start,count){const f=document.createDocumentFragment();let text='';let chain=null;
+ function flush(){if(!text)return;if(!chain||!chain.length){f.append(document.createTextNode(text));}
+  else{let host=null;for(const tag of chain){const el=tag.cloneNode(false);(host||f).appendChild(el);host=el;}host.appendChild(document.createTextNode(text));}
+  text='';}
+ for(let i=start;i<start+count;i++){const item=items[i];
+  if(item&&typeof item==='object'&&item.char!==undefined){const key=item.chain.map(n=>n.tagName+n.className).join('|');
+   const cur=(chain||[]).map(n=>n.tagName+n.className).join('|');
+   if(cur!==key){flush();chain=item.chain||[];}text+=item.char;}
+  else if(typeof item==='string'){flush();chain=null;text+=item;}
+  else{flush();chain=null;f.append(item.cloneNode(true));}}
+ flush();return f;}
  async function render(items,s,title,names){const token=++renderToken;const assets=[...new Set(["/brand-dog.png",...items.flatMap(q=>renderedImages(q,s).map(image=>imageSource(q,image)))])];try{await Promise.all(assets.map(src=>new Promise((resolve,reject)=>{const image=new Image();image.onload=resolve;image.onerror=()=>reject(Error('题图无法加载，请检查该题的图片。'));image.src=src;})));}catch(error){if(token!==renderToken)return;throw error;}if(token!==renderToken)return;pages=[];index=0;const measure=$('measure-root');measure.replaceChildren();$('print-root').replaceChildren();$('preview-canvas').replaceChildren();$('preview-empty').hidden=!!items.length;$('print-btn').disabled=!items.length;$('print-count').textContent=items.length?items.length+' 题':'';if(!items.length){$('page-indicator').textContent='0 / 0';$('prev-page').disabled=true;$('next-page').disabled=true;return;}
   let ci=0,current=page(title,1,s);measure.append(current);pages.push(current);let columns=current.querySelectorAll('.paper-column'),col=columns[0];
   function advance(){ci++;if(ci>=columns.length){current=page(title,pages.length+1,s);measure.append(current);pages.push(current);columns=current.querySelectorAll('.paper-column');ci=0;}col=columns[ci];}
   const fits=()=>col.scrollHeight<=col.clientHeight+1;
   items.forEach((q,n)=>{const block=document.createElement('section');block.className='print-question';block.innerHTML=blockHTML(q,n+1,s,names);col.append(block);fitAtoms(block,col.clientWidth,col.clientHeight*.8);if(fits())return;block.remove();
    const parts=[...block.children];let section=document.createElement('section');section.className='print-question';col.append(section);
-   for(let part of parts){section.append(part);if(fits())continue;part.remove();if(part.classList.contains('print-prompt')&&!section.childNodes.length){section.remove();advance();section=document.createElement('section');section.className='print-question';col.append(section);}else if(section.childNodes.length){advance();section=document.createElement('section');section.className='print-question continued';section.innerHTML=`<h4 class="print-q-title">${n+1}. ${esc(q.topic)}（续）</h4>`;col.append(section);}section.append(part);if(fits())continue;
+   for(let part of parts){section.append(part);if(fits())continue;const tallerThanColumn=part.getBoundingClientRect().height>col.clientHeight;part.remove();if(part.classList.contains('print-prompt')&&!section.childNodes.length){section.remove();advance();section=document.createElement('section');section.className='print-question';col.append(section);}else if(section.childNodes.length&&!tallerThanColumn){advance();section=document.createElement('section');section.className='print-question continued';section.innerHTML=`<h4 class="print-q-title">${n+1}. ${esc(q.topic)}（续）</h4>`;col.append(section);}section.append(part);if(fits())continue;
     const tokens=units(part);part.replaceChildren();let offset=0;
     while(offset<tokens.length){let low=1,high=tokens.length-offset,best=0;while(low<=high){const mid=(low+high)>>1;part.replaceChildren(sliceDOM(tokens,offset,mid));if(fits()){best=mid;low=mid+1;}else high=mid-1;}
      if(best===0){part.remove();advance();section=document.createElement('section');section.className='print-question continued';col.append(section);section.append(part);part.replaceChildren(sliceDOM(tokens,offset,1));fitAtoms(part,col.clientWidth,col.clientHeight*.8);if(!fits())throw Error('内容过高，无法完整分页，请调整公式。');best=1;}

@@ -4,10 +4,12 @@
   "private": true,
   "description": "Local file-backed study notebook with offline KaTeX and mhchem rendering",
   "scripts": {
+    "build": "node scripts/build-app.mjs",
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "test": "node --test tests/local.test.mjs && node tests/chemistry.cjs",
     "validate": "node scripts/validate.mjs",
+    "compact-history": "node scripts/compact-history.mjs",
     "pack:local": "python3 scripts/package-local.py"
   },
   "devDependencies": {"katex": "0.16.30"},

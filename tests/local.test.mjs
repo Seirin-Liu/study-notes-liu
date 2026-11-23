@@ -48,3 +48,18 @@ test('question images survive saves and only safe local assets are served',async
  const t=await temporary();const q={...fixture.questions[0],images:[{file:'diagram.png',alt:'题图'}]};const asset=path.join(t.directory,'assets',q.id,'diagram.png');await fs.mkdir(path.dirname(asset),{recursive:true});await fs.writeFile(asset,Buffer.from('89504e470d0a1a0a','hex'));await fs.writeFile(t.store.file,JSON.stringify({...fixture,questions:[q]}));const server=createApp({dataDirectory:t.directory});await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  try{const before=await t.store.read();assert.deepEqual(before.questions[0].images,q.images);assert.equal((await fetch(origin+'/assets/'+q.id+'/diagram.png')).status,200);assert.equal((await fetch(origin+'/assets/'+q.id+'/diagram.png')).headers.get('content-type'),'image/png');assert.notEqual((await fetch(origin+'/assets/'+q.id+'/../diagram.png')).status,200);assert(Schema.errors({...q,images:[{file:'../escape.png',alt:'bad'}]}).length>0);await fs.rm(asset);await assert.rejects(t.store.read(),{status:422});}finally{await new Promise(r=>server.close(r));await t.cleanup();}
 });
+
+test('legacy questions default to question, and a note keeps its kind when saved',async()=>{
+ const t=await temporary();
+ try{
+  const before=await t.store.read();
+  assert(before.questions.every(question=>question.kind==='question'));
+  const [first,...rest]=before.questions;
+  const note={...first,kind:'note'};
+  const saved=await t.store.save({...before,questions:[note,...rest]},before.revision);
+  const stored=(await t.store.read()).questions.find(question=>question.id===first.id);
+  assert.equal(stored.kind,'note');
+  assert.equal(stored.explanation,first.explanation);
+  await assert.rejects(t.store.save({...saved,questions:[{...note,kind:'other'},...rest]},saved.revision),{status:422});
+ }finally{await t.cleanup();}
+});

@@ -2,6 +2,7 @@ node_modules/
 .openai/
 .sites-runtime/
 data/history/
+data/subjects/
 data/*.tmp
 *.zip
 .env

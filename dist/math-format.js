@@ -21,12 +21,18 @@
     }
     return tokens;
   }
+  // 轻量富文本：**加粗** 与 __下划线__。仅在已转义的纯文本块内生效，不影响公式与图片标记。
+  function emphasize(html){
+    return html
+      .replace(/\*\*(?=[^\s*])([\s\S]*?[^\s*])\*\*/g,'<strong>$1</strong>')
+      .replace(/__(?=[^\s_])([\s\S]*?[^\s_])__/g,'<u>$1</u>');
+  }
   function renderToken(t){
-    if(t.type==='text')return escape(t.value);
+    if(t.type==='text')return emphasize(escape(t.value));
     try{if(t.error)throw Error(t.error);if(!katex)throw Error('公式组件未加载');const html=katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20,output:'htmlAndMathml'});return `<span class="formula-atom ${t.display?'formula-display':''}" data-tex="${escape(t.value)}">${html}</span>`;}
     catch(e){return `<span class="formula-error" title="${escape(e.message)}">公式待修正：${escape(t.value)}</span>`;}
   }
   function render(source,options={}){return tokenize(source,options.equation).map(renderToken).join('');}
   function check(source,options={}){const errors=[];for(const t of tokenize(source,options.equation)){if(t.type==='text')continue;try{if(t.error)throw Error(t.error);katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20});}catch(e){errors.push(e.message.replace(/^KaTeX parse error: /,''));}}return errors;}
-  return {render,check,tokenize,escape,normalizeDelimiters};
+  return {render,check,tokenize,escape,emphasize,normalizeDelimiters};
 });

@@ -26,7 +26,7 @@
  .empty-state h3{font-size:17px}.empty-state p,#preview-empty p{font-size:14px}#preview-empty small{font-size:12px}
  form>label,.form-grid>label,.chemistry-panel label{font-size:14px}form input:not([type=checkbox]),form textarea,form select{font-size:15px}.field-help,.check-result,.formula-check,.form-message{font-size:13px}
  .guide-page{max-width:900px;padding:36px 30px;font-size:16px;line-height:1.9}.guide-page h1{font-size:28px;line-height:1.5}.guide-page h2{font-size:21px;margin-top:32px}.guide-page p,.guide-page td,.guide-page th,.guide-page pre{font-size:15px}.guide-page pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:20px;background:#f6f8fa;border:1px solid var(--line);border-radius:8px}.guide-page a{color:#0969da}.guide-page table{width:100%;border-collapse:collapse}.guide-page td,.guide-page th{padding:12px;border:1px solid var(--line);text-align:left}
- @media(max-width:1150px){.sidebar{width:170px}main{margin-left:170px;width:calc(100% - 170px)}.workspace{padding:24px}.workbench,.overview-mode.editing-mode .workbench{grid-template-columns:minmax(0,1fr)}.preview-panel{position:static}.preview-stage{max-height:650px;overflow:auto}}
+ @media(max-width:1150px){.sidebar{width:170px}main{margin-left:170px;width:calc(100% - 170px)}.workspace{padding:24px}.workbench{grid-template-columns:minmax(0,1fr) 300px;gap:16px}.overview-mode.editing-mode .workbench{grid-template-columns:minmax(0,1fr)}.preview-panel{position:sticky;top:12px}.preview-stage{max-height:560px;overflow:auto}}
  @media(max-width:640px){.sidebar{width:100%;padding:18px}.nav-item{font-size:14px}.guide-link{margin-top:10px;padding:8px 0;border:0}main{margin:0;width:100%}.workspace{padding:20px 14px}.collection-panel,.editor-panel{padding:18px 14px 0}.page-heading h1,.subject-selected .page-heading h1{font-size:24px}.page-heading .primary{font-size:13px;margin:0}.question-text{font-size:16px}.date-filter input{max-width:145px}.topic-option{font-size:13px}.guide-page{padding:24px 18px}}
 }
 
@@ -75,3 +75,872 @@
 .page-title-icon{display:inline-flex;vertical-align:middle;margin-right:9px;color:#57606a}.page-title-icon .icon{width:25px;height:25px;stroke-width:1.8}@media(max-width:640px){.page-title-icon .icon{width:22px;height:22px;margin-right:5px}}
 
 .question-pagination{display:flex;justify-content:center;align-items:center;gap:14px;padding:18px 0 20px;color:#656d76;font-size:13px}.question-pagination button{padding:8px 13px;border:1px solid #d8dee4;border-radius:6px;background:#fff;color:#0969da;font-size:13px}.question-pagination button:disabled{color:#8c959f;background:#f6f8fa;cursor:default}.overview-mode #question-pagination{display:none}
+
+/* 已掌握开关（iOS 风格） */
+.mastery-switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative}
+.mastery-switch input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.mastery-track{position:relative;display:block;flex:none;width:44px;height:26px;border-radius:13px;background:#d1d5db;transition:background .22s ease;box-shadow:inset 0 0 0 1px #0000000d}
+.mastery-track::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #00000040,0 0 1px #0000001f;transition:transform .22s cubic-bezier(.3,.9,.4,1)}
+.mastery-switch input:checked + .mastery-track{background:#007aff}
+.mastery-switch input:checked + .mastery-track::after{transform:translateX(18px)}
+.mastery-switch:hover .mastery-track{filter:brightness(.97)}
+.mastery-switch input:focus-visible + .mastery-track{outline:2px solid #0969da;outline-offset:3px}
+.mastery-switch input:active + .mastery-track::after{width:24px}
+.mastery-switch input:checked:active + .mastery-track::after{transform:translateX(16px)}
+.mastery-label{font-size:12px;color:#57606a;min-width:3em}
+.mastery-switch input:checked ~ .mastery-label{color:#0969da;font-weight:550}
+.mastery-switch input:disabled + .mastery-track{opacity:.55}
+.mastery-switch input:disabled ~ .mastery-label{opacity:.55}
+@media(max-width:640px){.mastery-switch{gap:6px}.mastery-track{width:40px;height:24px;border-radius:12px}.mastery-track::after{width:20px;height:20px}.mastery-switch input:checked + .mastery-track::after{transform:translateX(16px)}.mastery-switch input:checked:active + .mastery-track::after{transform:translateX(14px)}}
+
+/* 批量掌握状态按钮 */
+.selection-bar button:disabled{opacity:.45;cursor:not-allowed}
+.selection-bar #mark-mastered:not(:disabled){border-color:#b7dcff;background:#eef7ff;color:#0969da;font-weight:550}
+.selection-bar #mark-mastered:not(:disabled):hover{background:#ddf0ff}
+.selection-bar #mark-review:not(:disabled){border-color:#f0d9c8;background:#fff8f2;color:#a35b32}
+.selection-bar #mark-review:not(:disabled):hover{background:#ffefe3}
+
+/* 题目卡片浅灰底色 */
+.question-card{background:#f6f7f8;border-color:#e4e6e9;transition:background .15s ease,border-color .15s ease}
+.question-card:hover{background:#f1f2f4;border-color:#d3d7dc}
+.question-card.selected{background:#eef6ff;border-color:#8fc2ff}
+.question-card.is-saving{opacity:.75}
+.question-card .card-bottom{background:#f1f2f4;border-top-color:#e4e6e9}
+.question-card.selected .card-bottom{background:#e6f1fe;border-top-color:#cfe3fa}
+.question-card .card-answer{background:#fff;border:1px solid #e4e6e9}
+.question-card.selected .card-answer{background:#fff}
+
+/* 编辑页“是否掌握”开关 */
+.form-footer .editor-mastery{margin:0;font-weight:400;gap:9px;flex:none}
+.form-footer .editor-mastery .mastery-label{font-size:13px;color:#57606a;min-width:3.2em}
+.form-footer .editor-mastery input:checked ~ .mastery-label{color:#0969da;font-weight:600}
+@media(max-width:640px){.form-footer{flex-wrap:wrap}.form-footer .editor-mastery{order:-1;width:100%}}
+
+/* 轻量富文本按钮 B / U */
+.formula-tools .wrap-button{font-size:13px;font-weight:600;line-height:1;padding:5px 9px;min-width:30px}
+.formula-tools .wrap-button b,.formula-tools .wrap-button u{font-size:13px;text-underline-offset:2px}
+.formula-tools .wrap-button:active{background:#e6eef9}
+
+/* 正文富文本标记（编辑器 B / U）在打印与预览中的可见样式 */
+.print-body strong,.print-explanation strong,.print-notes strong,.print-answer strong{font-weight:700;color:#000}
+.print-body u,.print-explanation u,.print-notes u,.print-answer u{text-decoration-line:underline;text-decoration-style:solid;text-decoration-thickness:1px;text-underline-offset:2px}
+/* 答案区整体已带下划线，局部下划线标记再用浅底纹区分 */
+.print-answer u{background:#eef4fc;border-radius:2px;padding:0 1px}
+.card-answer strong,.question-text strong{font-weight:700}
+.card-answer u,.question-text u{text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* 工具栏按钮统一高度 */
+.formula-tools button{height:34px;min-height:34px;line-height:1;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;vertical-align:middle}
+.formula-tools .wrap-button{height:34px;min-height:34px;padding:0 10px;min-width:34px}
+.formula-tools .wrap-button b,.formula-tools .wrap-button u{font-size:13px;line-height:1;text-underline-offset:2px}
+.formula-tools .tool-icon-button .insert-image-icon{width:16px;height:16px;flex:none;stroke-width:1.7}
+.formula-tools .tool-icon-button span{white-space:nowrap}
+@media(max-width:640px){.formula-tools button{height:32px;min-height:32px;padding:0 10px}.formula-tools .wrap-button{min-width:32px}}
+
+/* 页头标题禁止逐字换行：中文在窄屏下会被压成竖排 */
+.page-heading h1,.subject-selected .page-heading h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.page-heading>div:first-child{min-width:0;overflow:hidden}
+@media(max-width:1000px){
+  .page-heading{align-items:center;gap:12px;flex-wrap:wrap}
+  .page-heading>div:first-child{flex:1 1 auto;min-width:0}
+  .page-heading .top-search{flex:1 1 100%;order:3;width:auto}
+  .page-heading #add-btn{order:2;margin-left:auto}
+}
+@media(max-width:640px){
+  .page-heading h1,.subject-selected .page-heading h1{font-size:20px;line-height:1.4;max-width:none}
+  .page-heading .top-search{order:3;flex-basis:100%}
+}
+
+/* 空状态：区分「学科无题」与「筛选无结果」 */
+.empty-state{padding:56px 16px}
+.empty-state .empty-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:#f1f3f5;color:#8b949e;margin-bottom:14px}
+.empty-state .empty-icon .icon{width:26px;height:26px}
+.empty-state h3{font-size:15px;margin:0 0 8px;color:#1f2328}
+.empty-state p{font-size:13px;line-height:1.7;color:#6b7280;margin:0 auto 18px;max-width:420px}
+.empty-state .empty-cta{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:9px 16px;border-radius:7px}
+.empty-state .empty-cta .icon{width:15px;height:15px}
+.empty-state .empty-cta.secondary{background:#fff}
+
+/* 辅助文字对比度提升（原 #a6ada3 约 2.1:1，达不到 4.5:1） */
+.card-bottom small{color:#5b6472!important}
+input::placeholder,textarea::placeholder{color:#8b95a1}
+#preview-empty{color:#6b7280}
+#preview-empty small{color:#6b7280}
+.formula-tools small{color:#6b7280}
+.formula-tools{color:#6b7280}
+.collection-bottom{color:#6b7280!important}
+.field-help{color:#6b7280}
+.selection-bar{color:#4b5563}
+.save-info{color:#6b7280}
+.nav-item small{color:#6b7280}
+.card-actions button{color:#5a6b5f}
+
+/* 学科 / 专题下拉框：统一尺寸、自带箭头、与其他控件同风格 */
+.editor-panel .form-grid select,
+#f-subject,#f-topic{
+  height:40px;min-height:40px;width:100%;
+  padding:0 36px 0 12px;
+  font-size:14px;line-height:38px;
+  color:#1f2328;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  border:1px solid #d9dde3;
+  border-radius:8px;
+  box-shadow:none;
+  -webkit-appearance:none;appearance:none;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.editor-panel .form-grid select:hover,
+#f-subject:hover,#f-topic:hover{border-color:#b9c0c9}
+.editor-panel .form-grid select:focus,
+#f-subject:focus,#f-topic:focus{outline:none;border-color:#8fc2ff;box-shadow:0 0 0 3px rgba(143,194,255,.28)}
+.editor-panel .form-grid select:disabled,
+#f-topic:disabled{background-color:#f6f7f8;color:#8b95a1;cursor:not-allowed;opacity:1}
+/* 学科/专题标签与控件间距收紧 */
+.editor-panel .form-grid>label>span{font-size:13px;color:#4b5563;font-weight:550}
+.editor-panel .form-grid{gap:16px}
+
+/* 编辑页底部操作栏吸底：滚到页面末尾时才回到文档流 */
+.form-footer.editor-sticky{
+  position:sticky;bottom:0;z-index:20;
+  margin:0 -23px;padding:12px 23px;
+  background:#fff;
+  border-top:1px solid #e4e7eb;
+  box-shadow:0 -6px 16px rgba(31,35,40,.06);
+}
+/* 滚动到底时取消阴影，视觉上"落回"卡片底部 */
+.form-footer.editor-sticky.is-docked{box-shadow:none}
+.editor-panel{padding-bottom:0}
+/* 保存失败提示不能在吸底栏下面被遮住 */
+.editor-panel .form-message{margin:0;padding:8px 0 10px;text-align:right}
+@media(max-width:640px){
+  .form-footer.editor-sticky{margin:0 -17px;padding:10px 17px}
+}
+
+/* 编辑页隐藏页面级标题：卡片内已有「← 编辑题目」，顶部再显示学科标题与录入按钮是重复的 */
+.editing-mode .page-heading{display:none}
+
+
+
+/* 学科页：标题与搜索/按钮同一行，右侧工具组与下方预览列严格对齐；
+   滚动时整列（页头工具组 + 打印预览）保持不动。 */
+@media(min-width:641px){
+  body.subject-selected:not(.editing-mode) .workspace{padding-top:14px}
+
+  /* 页头：左侧标题 + 右侧工具组，工具组宽度锁定为预览列宽 */
+  body.subject-selected:not(.editing-mode) .page-heading{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:0;margin:0 0 10px;padding:0;
+  }
+  body.subject-selected:not(.editing-mode) .page-heading>div:first-child{
+    flex:1 1 auto;min-width:0;
+  }
+  body.subject-selected:not(.editing-mode) .page-heading .heading-dot{display:none}
+  body.subject-selected:not(.editing-mode) .heading-tools{
+    display:flex;align-items:center;gap:10px;
+    flex:0 0 var(--preview-w);
+    width:var(--preview-w);
+    box-sizing:border-box;
+  }
+  body.subject-selected:not(.editing-mode) .heading-tools .top-search{
+    flex:1 1 auto;width:auto;min-width:0;margin:0;
+  }
+  body.subject-selected:not(.editing-mode) .heading-tools #add-btn{flex:0 0 auto;margin:0}
+
+  /* 右栏整列固定 */
+  body.subject-selected:not(.editing-mode) .right-rail{
+    position:sticky;
+    top:0;
+    align-self:start;
+    display:flex;flex-direction:column;
+    max-height:calc(100vh - 14px);
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.preview-panel{
+    flex:1 1 auto;min-height:0;
+    margin-top:10px;
+    overflow-y:auto;overscroll-behavior:contain;
+    position:static;
+  }
+  /* 页头工具组同样固定：与右栏同步吸顶 */
+  body.subject-selected:not(.editing-mode) .page-heading{
+    position:sticky;top:0;z-index:28;
+    background:var(--bg,#f7f8fa);
+    padding-top:14px;padding-bottom:4px;
+  }
+  body.subject-selected:not(.editing-mode) .workspace{padding-top:0}
+}
+
+/* 预览列宽：与右栏网格列保持一致 */
+.subject-selected:not(.editing-mode){--preview-w:370px}
+@media(min-width:1500px){.subject-selected:not(.editing-mode){--preview-w:420px}}
+@media(max-width:1190px){.subject-selected:not(.editing-mode){--preview-w:315px}}
+@media(max-width:1150px){.subject-selected:not(.editing-mode){--preview-w:300px}}
+
+
+/* ===== 学科页三栏布局 =====
+   左：侧栏（固定）  中：标题 + 可滚动列表  右：搜索/按钮 + 打印预览（固定） */
+@media(min-width:641px){
+  html:has(body.subject-selected:not(.editing-mode)),
+  body.subject-selected:not(.editing-mode){
+    height:100vh;overflow:hidden;overscroll-behavior:none;
+  }
+  body.subject-selected:not(.editing-mode) main{height:100%;overflow:hidden}
+  body.subject-selected:not(.editing-mode) .app-shell{height:100%;overflow:hidden}
+  body.subject-selected:not(.editing-mode) .workspace{
+    height:100vh;max-width:none;margin:0;
+    padding:14px 24px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 370px;
+    gap:0 24px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    box-sizing:border-box;
+    align-content:start;
+  }
+  /* 中间列：标题占顶部，卡片自行滚动 */
+  body.subject-selected:not(.editing-mode) .workbench{display:contents}
+  body.subject-selected:not(.editing-mode) .collection-header{
+    grid-column:1;grid-row:1;
+    margin:0;min-height:48px;align-items:center;
+  }
+  body.subject-selected:not(.editing-mode) .collection-panel{
+    grid-column:1;grid-row:2;
+    margin-top:10px;
+    overflow:visible;
+    box-sizing:border-box;
+  }
+  /* 右侧列：工具组 + 预览卡片，整体固定 */
+  body.subject-selected:not(.editing-mode) .right-rail{
+    grid-column:2;grid-row:1 / span 2;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:auto;
+    max-height:calc(100vh - 14px);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;
+    margin:0;min-height:28px;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools .top-search{
+    flex:1 1 auto;width:auto;min-width:0;margin:0;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools #add-btn{flex:0 0 auto;margin:0;white-space:nowrap}
+  body.subject-selected:not(.editing-mode) .right-rail>.preview-panel{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overscroll-behavior:contain;
+    position:static;
+  }
+}
+@media(min-width:1500px){
+  body.subject-selected:not(.editing-mode) .workspace{grid-template-columns:minmax(0,1fr) 420px}
+}
+@media(max-width:1190px){
+  body.subject-selected:not(.editing-mode) .workspace{grid-template-columns:minmax(0,1fr) 315px;gap:0 16px;padding:14px 20px}
+}
+
+/* 三栏布局：彻底锁定页面级滚动，只保留中间列表内部滚动 */
+@media(min-width:641px){
+  body.subject-selected:not(.editing-mode){
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100vh;
+    overflow:hidden!important;
+  }
+  body.subject-selected:not(.editing-mode) .app-shell,
+  body.subject-selected:not(.editing-mode) main,
+  /* workspace 允许纵向滚动（中间列整体滚动），横向保持隐藏 */
+  body.subject-selected:not(.editing-mode) .workspace{
+    height:100vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+  }
+}
+
+/* 中间栏标题：图标与文字同一行，位于卡片外的页面底色上 */
+.collection-header{display:flex;align-items:center;min-width:0}
+.collection-header .sidebar-title{display:inline-flex;align-items:center;gap:9px;margin:0;min-width:0}
+.collection-header .page-title-icon{display:inline-flex;align-items:center;flex:none}
+.collection-header .page-title-icon .icon{width:22px;height:22px;stroke-width:1.8;display:block}
+.collection-header h1{margin:0;font-size:22px;font-weight:650;line-height:1.25;color:#1f2328;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:640px){
+  .collection-header h1{font-size:19px}
+  .collection-header .page-title-icon .icon{width:19px;height:19px}
+}
+
+/* 右栏工具组统一尺寸：搜索框与「录入新题」按钮同高 44px、圆角 9px，与卡片一致 */
+@media(min-width:641px){
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools{
+    align-items:center;
+    height:44px;
+    min-height:44px;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools .top-search{
+    align-self:center;
+    height:44px;
+    min-height:44px;
+    display:flex;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools .search{
+    height:44px;
+    min-height:44px;
+    padding:0 14px;
+    border-radius:9px;
+    border:1px solid #d8dee4;
+    background:#fff;
+    box-sizing:border-box;
+    width:100%;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools .search input{
+    font-size:14px!important;
+    line-height:1;
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.heading-tools #add-btn{
+    height:44px;
+    min-height:44px;
+    padding:0 16px;
+    border-radius:9px;
+    font-size:14px;
+    box-sizing:border-box;
+    align-self:center;
+  }
+  /* 左侧标题行与右栏工具组同高，保证左右卡片顶部齐平 */
+  body.subject-selected:not(.editing-mode) .collection-header{
+    min-height:44px;
+    align-items:center;
+  }
+}
+
+
+/* ===== 编辑页：与列表页相同的三栏结构 =====
+   中间放表单，右侧保留 PDF 预览，左侧边栏不变 */
+@media(min-width:641px){
+  body.editing-mode{
+    height:100vh;
+    overflow:hidden;
+  }
+  body.editing-mode main,
+  body.editing-mode .app-shell{
+    height:100vh;
+    overflow:hidden;
+  }
+  body.editing-mode .workspace{
+    height:100vh;
+    max-width:none;
+    margin:0;
+    padding:14px 24px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 370px;
+    gap:0 24px;
+    align-content:start;
+    overflow-y:auto;
+    overflow-x:hidden;
+    box-sizing:border-box;
+  }
+  /* 中间列表与标题在编辑时让位给表单 */
+  body.editing-mode .collection-header,
+  body.editing-mode .collection-panel{display:none!important}
+  /* 工具组在编辑页不需要（搜索/录入） */
+  body.editing-mode .heading-tools{display:none!important}
+
+  body.editing-mode .workbench{display:contents}
+  body.editing-mode .editor-panel{
+    grid-column:1;
+    display:block;
+    width:100%;
+    min-width:0;
+    height:auto;
+    overflow:visible;
+    margin:0;
+  }
+  /* 右侧：打印预览保持固定 */
+  body.editing-mode .right-rail{
+    grid-column:2;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:auto;
+    max-height:calc(100vh - 14px);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  body.editing-mode .right-rail>.preview-panel{
+    flex:1 1 auto;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    position:static;
+  }
+}
+@media(min-width:1500px){
+  body.editing-mode .workspace{grid-template-columns:minmax(0,1fr) 420px}
+}
+@media(max-width:1190px){
+  body.editing-mode .workspace{grid-template-columns:minmax(0,1fr) 315px;gap:0 16px;padding:12px 20px}
+}
+@media(max-width:1000px){
+  body.editing-mode .workspace{padding:12px 16px}
+}
+
+/* 全部错题（总览）页：隐藏「录入新题」与搜索框，用学科卡片进入 */
+body.overview-mode .right-rail>.heading-tools{display:none!important}
+
+/* 打印预览的纸张下拉框：与全站控件统一（44px / 9px 圆角 / 自定义箭头） */
+.preview-panel .print-controls>select#paper-size{
+  height:44px;
+  min-height:44px;
+  font-size:14px;
+  color:#1f2328;
+  padding:0 36px 0 13px;
+  border:1px solid #d8dee4;
+  border-radius:9px;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  -webkit-appearance:none;
+  appearance:none;
+  box-shadow:none;
+  transition:border-color .15s ease,box-shadow .15s ease;
+  box-sizing:border-box;
+}
+.preview-panel .print-controls>select#paper-size:hover{border-color:#b9c0c9}
+.preview-panel .print-controls>select#paper-size:focus{
+  outline:none;
+  border-color:#8fc2ff;
+  box-shadow:0 0 0 3px rgba(143,194,255,.28);
+}
+/* 右侧单栏/双栏按钮同高，保持一行整齐 */
+.preview-panel .print-controls .segmented{height:44px;box-sizing:border-box;align-items:stretch}
+.preview-panel .print-controls .segmented button{font-size:14px;border-radius:7px}
+
+/* 状态筛选与时间筛选风格统一：内层按钮同高、同内边距，文字基线一致 */
+.status-select>button,
+.date-range-select>button,
+#status-menu-button,
+#date-menu-button{
+  height:38px;
+  min-height:38px;
+  padding:0 10px 0 13px;
+  flex:0 1 auto;
+  font-size:14px;
+  color:#343541;
+  background:transparent;
+  border:0;
+  border-radius:7px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+/* 外框统一高度与内边距 */
+.status-select,
+.date-range-select{
+  box-sizing:border-box;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+}
+.status-select{padding:2px}
+.date-range-select{padding:2px 7px 2px 2px}
+/* 「时间维度」前置标签对齐 */
+.date-range-select>span{
+  display:flex;
+  align-items:center;
+  height:38px;
+  padding-left:11px;
+  font-size:14px;
+  color:#6b7280;
+  white-space:nowrap;
+}
+#status-menu-button{width:100%;justify-content:space-between}
+/* 状态按钮内的箭头与日期按钮一致 */
+#status-menu-button .date-chevron,
+#date-menu-button .date-chevron{flex:none;margin-left:auto}
+
+/* 纸张选择：与「全部状态」筛选框完全同一套外观 */
+.preview-panel .print-controls .paper-select{
+  flex:1 1 auto;
+  min-width:110px;
+  height:42px;
+  min-height:42px;
+  padding:2px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  border:1px solid #d9d9df;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:none;
+}
+.preview-panel .print-controls .paper-select>button{
+  height:38px;
+  min-height:38px;
+  padding:0 10px 0 13px;
+  font-size:14px;
+  color:#343541;
+  background:transparent;
+  border:0;
+  border-radius:7px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:7px;
+  width:100%;
+  cursor:pointer;
+}
+.preview-panel .print-controls .paper-select>button .date-chevron{flex:none;margin-left:auto}
+.preview-panel .print-controls .paper-select>button>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-panel .print-controls .paper-select:hover{border-color:#c3cbd4}
+.preview-panel .print-controls .paper-select:focus-within{
+  border-color:#8fc2ff;
+  box-shadow:0 0 0 3px rgba(143,194,255,.28);
+}
+/* 覆盖之前给原生 select 写的尺寸规则 */
+.preview-panel .print-controls>select#paper-size{display:none}
+
+/* 编辑页学科/专题：与「全部状态」筛选框完全同一套外观 */
+.editor-panel .editor-select{
+  height:42px;
+  min-height:42px;
+  padding:2px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  border:1px solid #d9d9df;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:none;
+  width:100%;
+}
+.editor-panel .editor-select>button{
+  height:38px;
+  min-height:38px;
+  padding:0 10px 0 13px;
+  font-size:14px;
+  color:#343541;
+  background:transparent;
+  border:0;
+  border-radius:7px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:7px;
+  width:100%;
+  cursor:pointer;
+  text-align:left;
+}
+.editor-panel .editor-select>button>span:first-child{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.editor-panel .editor-select>button .date-chevron{flex:none;margin-left:auto}
+.editor-panel .editor-select:hover{border-color:#c3cbd4}
+.editor-panel .editor-select:focus-within{
+  border-color:#8fc2ff;
+  box-shadow:0 0 0 3px rgba(143,194,255,.28);
+}
+/* 原生 select 保留为数据源，不显示 */
+.editor-panel .editor-select>select{display:none}
+/* 菜单在视口内定位，与其它下拉一致 */
+#f-subject-menu,#f-topic-menu{z-index:60}
+
+/* 学科/专题菜单项较多时限制高度并可滚动 */
+#f-subject-menu,#f-topic-menu{
+  max-height:min(420px,calc(100vh - 24px));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+
+/* 编辑页与打印预览的图标、状态文字统一尺寸 */
+.editor-panel .section-heading .icon,
+.preview-panel .section-heading .icon{
+  width:15px;
+  height:15px;
+  stroke-width:1.8;
+  flex:none;
+}
+.editor-panel .section-heading>div{gap:7px}
+.editor-panel .section-heading h2{font-size:15px}
+/* 「实时预览中」与右侧「实时同步」同字号、同配色 */
+.editing-label{
+  font-size:12px;
+  color:#6b7280;
+  letter-spacing:0;
+  font-weight:400;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+
+/* 编辑面板头部：返回按钮与标题图标放大到与打印预览一致 */
+.editor-panel .section-heading .icon-button{
+  width:28px;
+  height:28px;
+  padding:4px;
+  border-radius:6px;
+}
+.editor-panel .section-heading .icon-button .icon{
+  width:18px;
+  height:18px;
+  stroke-width:1.9;
+}
+.editor-panel .section-heading>div{gap:8px}
+
+/* 编辑页吸底栏贴到视口底边：抵消 workspace 底部的内边距，避免下方露出内容 */
+@media(min-width:641px){
+  body.editing-mode .workspace{
+    padding-bottom:0;
+    scroll-padding-bottom:0;
+  }
+  body.editing-mode .form-footer.editor-sticky{
+    bottom:0;
+    /* 用负下边距吃掉卡片内边距，让操作栏的底边与视口底边对齐 */
+    margin-bottom:-1px;
+  }
+}
+
+/* 滚到底时操作栏不再贴底：恢复容器底部留白，让操作栏落回卡片内并留出空隙 */
+@media(min-width:641px){
+  body.editing-mode .workspace{
+    padding-bottom:18px;
+  }
+  body.editing-mode .form-footer.editor-sticky{
+    margin-bottom:0;
+  }
+}
+
+/* ===== 编辑页：卡片固定高度，只在卡片内部滚动 ===== */
+@media(min-width:641px){
+  /* 外层不再滚动 */
+  body.editing-mode .workspace{
+    height:100vh;
+    overflow:hidden;
+    align-items:start;
+  }
+  /* 卡片固定占满可用高度，内部滚动 */
+  body.editing-mode .editor-panel{
+    height:calc(100vh - 28px);
+    max-height:calc(100vh - 28px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    box-sizing:border-box;
+    margin:0;
+  }
+  /* 表单与吸底栏跟随卡片内滚动 */
+  body.editing-mode #question-form{position:relative}
+  body.editing-mode .form-footer.editor-sticky{
+    position:sticky;
+    bottom:0;
+    margin:0 -24px;
+    padding:12px 24px;
+  }
+  /* 底部留白由卡片内边距提供 */
+  body.editing-mode .editor-panel{padding-bottom:0}
+  body.editing-mode .form-footer.editor-sticky{margin-bottom:0}
+}
+@media(max-width:1000px){
+  body.editing-mode .editor-panel{height:calc(100vh - 24px);max-height:calc(100vh - 24px)}
+  body.editing-mode .form-footer.editor-sticky{margin:0 -16px;padding:10px 16px}
+}
+
+/* 编辑页底部操作栏始终贴合卡片底边 */
+@media(min-width:641px){
+  body.editing-mode .editor-panel{
+    padding-bottom:0;
+  }
+  body.editing-mode .form-footer.editor-sticky{
+    position:sticky;
+    bottom:0;
+    margin-bottom:0;
+    border-bottom:0;
+    border-radius:0 0 9px 9px;
+  }
+  /* 表单底部也不留空隙 */
+  body.editing-mode #question-form{padding-bottom:0;margin-bottom:0}
+  body.editing-mode #form-message{margin-bottom:0}
+}
+
+/* 编辑页底部操作栏：与卡片底边齐平，圆角贴合卡片 */
+@media(min-width:641px){
+  body.editing-mode .form-footer.editor-sticky{
+    margin-bottom:-1px;
+  }
+}
+
+/* form-message 移到吸底栏之前，避免它在下方把吸底栏顶起来 */
+@media(min-width:641px){
+  body.editing-mode #question-form{display:flex;flex-direction:column}
+  body.editing-mode #question-form>.form-message{order:1}
+  body.editing-mode #question-form>.form-footer{order:2;margin-top:0}
+}
+
+/* 提示条：跟随当前布局居中，避免压住底部操作栏或偏到屏幕外 */
+#toast{
+  left:50%!important;
+  transform:translateX(-50%) translateY(20px);
+  bottom:24px;
+  z-index:90;
+}
+#toast.visible{transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){
+  #toast{left:50%!important;bottom:60px}
+}
+/* 编辑页提示条抬高，避开固定在卡片底部的操作栏 */
+body.editing-mode #toast{bottom:96px}
+
+/* 弹窗统一定位：始终视口居中，长内容不顶到屏幕上方 */
+dialog{
+  position:fixed;
+  inset:0;
+  margin:auto;
+  height:max-content;
+  max-height:min(88vh,calc(100vh - 48px));
+  overflow-y:auto;
+  z-index:100;
+}
+dialog[open]{display:block}
+dialog::backdrop{background:rgba(31,35,40,.45)}
+/* 确认框内容短，固定居中尺寸更稳 */
+#confirm-dialog{direction:ltr;text-align:left}
+#confirm-dialog h3,#confirm-dialog p{text-align:left}
+
+/* 卡片内「解析」展开按钮与展开区 */
+.card-actions .review-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:13px;
+  color:#5a6b5f;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+}
+.card-actions .review-toggle:hover{color:#0969da}
+.card-actions .review-toggle .icon{width:13px;height:13px}
+.card-actions .review-toggle .chevron{
+  display:inline-block;
+  width:7px;height:7px;
+  border-right:1.6px solid currentColor;
+  border-bottom:1.6px solid currentColor;
+  transform:rotate(45deg) translateY(-1px);
+  transition:transform .18s ease;
+}
+.question-card.solution-open .review-toggle{color:#0969da}
+.question-card.solution-open .review-toggle .chevron{transform:rotate(-135deg) translateY(-1px)}
+
+/* 展开的解析面板 */
+.card-solution{
+  border-top:1px solid #e4e6e9;
+  padding:14px 16px 16px;
+  background:#fff;
+  font-size:13px;
+  line-height:1.8;
+  color:#374151;
+}
+.card-solution[hidden]{display:none}
+.card-solution section+section{margin-top:12px}
+.card-solution h4{
+  margin:0 0 4px;
+  font-size:12px;
+  font-weight:650;
+  color:#1f2328;
+}
+.card-solution .solution-empty{margin:0;color:#8b95a1;font-size:13px}
+.card-solution .formula-display{margin:6px 0}
+
+/* 打印预览卡片撑满页面高度（学科页） */
+@media(min-width:641px){
+  body.subject-selected:not(.editing-mode) .right-rail{
+    /* 视口高度减去上下留白（workspace 顶部内边距 + 底部留白） */
+    height:calc(100vh - 2 * var(--pad-top,14px));
+    max-height:calc(100vh - 2 * var(--pad-top,14px));
+  }
+  body.subject-selected:not(.editing-mode) .right-rail>.preview-panel{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  /* 预览区占据剩余空间，控件固定在上下两端 */
+  body.subject-selected:not(.editing-mode) .preview-panel .preview-stage{
+    flex:1 1 auto;
+    min-height:0;
+  }
+}
+
+/* 打印预览空状态：在预览区水平垂直居中（不再用固定 padding 撑高） */
+.preview-stage{display:flex;flex-direction:column}
+.preview-stage>#preview-canvas{flex:1 1 auto;min-height:0;width:100%}
+#preview-empty{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:24px 16px;
+  margin:0;
+  text-align:center;
+  height:100%;
+  box-sizing:border-box;
+}
+#preview-empty[hidden]{display:none!important}
+#preview-empty .icon{width:34px;height:34px;stroke-width:1.2}
+#preview-empty p{margin:10px 0 0;font-size:13px}
+#preview-empty small{font-size:12px;opacity:.85}
+
+/* 编辑页打印预览卡片也撑满页面高度 */
+@media(min-width:641px){
+  body.editing-mode .right-rail{
+    height:calc(100vh - 2 * var(--pad-top,14px));
+    max-height:calc(100vh - 2 * var(--pad-top,14px));
+  }
+  body.editing-mode .right-rail>.preview-panel{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  body.editing-mode .right-rail .preview-stage{
+    flex:1 1 auto;
+    min-height:0;
+  }
+}
+
+/* 卡片展开的解析：字号与题干正文一致，便于阅读 */
+.card-solution{
+  font-size:16px;
+  line-height:1.9;
+}
+.card-solution h4{
+  font-size:14px;
+  font-weight:650;
+  margin-bottom:6px;
+}
+.card-solution section+section{margin-top:16px}
+.card-solution .solution-empty{font-size:14px}
+
+/* 解析/方程式/备注在展开区内保留原始换行 */
+.card-solution,
+.card-solution section > div{
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+/* 图片与独立公式块自身不继承预格式化（避免多余空格） */
+.card-solution .formula-atom,
+.card-solution .print-image,
+.card-solution img{white-space:normal}

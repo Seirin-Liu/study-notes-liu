@@ -1,80 +1,384 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
   <base href="/">
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#263f37"><meta name="description" content="比格多栋错题本">
+  <link rel="stylesheet" href="/review.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#263f37">
+  <meta name="description" content="比格多栋错题本">
   <title>错题本</title>
-  <link rel="stylesheet" href="/vendor/katex/katex.min.css"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/image-layout.css"><link rel="stylesheet" href="/category-layout.css"><link rel="stylesheet" href="/brand-animation.css"><link rel="stylesheet" href="/home-mascot.css">
-  <script src="/vendor/katex/katex.min.js" defer></script><script src="/vendor/katex/mhchem.min.js" defer></script>
-  <script src="/math-format.js" defer></script><script src="/data-schema.js" defer></script><script src="/image-references.js" defer></script><script src="/chemistry.js" defer></script><script src="/print-preview.js" defer></script><script src="/editor-images.js" defer></script><script src="/app.js" defer></script>
-<link rel="stylesheet" href="/readability.css"><link rel="stylesheet" href="/preview-theme.css"><link rel="stylesheet" href="/editor-images.css"></head>
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/image-layout.css">
+  <link rel="stylesheet" href="/category-layout.css">
+  <link rel="stylesheet" href="/brand-animation.css">
+  <link rel="stylesheet" href="/home-mascot.css">
+  <script src="/vendor/katex/katex.min.js" defer></script>
+  <script src="/vendor/katex/mhchem.min.js" defer></script>
+  <script src="/math-format.js" defer></script>
+  <script src="/data-schema.js" defer></script>
+  <script src="/image-references.js" defer></script>
+  <script src="/chemistry.js" defer></script>
+  <script src="/print-preview.js" defer></script>
+  <script src="/editor-images.js" defer></script>
+  <script src="/app.js" defer></script>
+  <link rel="stylesheet" href="/readability.css">
+  <link rel="stylesheet" href="/preview-theme.css">
+  <link rel="stylesheet" href="/editor-images.css">
+  <link rel="stylesheet" href="/mobile.css">
+</head>
+
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><button id="home-mascot" class="home-mascot" type="button" aria-label="点击表情播放动效" title="点我一下"><img id="home-mascot-image" alt=""><span class="home-mascot-effect" aria-hidden="true"></span></button></div>
-      <nav id="subject-nav" aria-label="学科导航"></nav>
+      <div class="brand"><button id="home-mascot" class="home-mascot" type="button" aria-label="点击表情播放动效"
+          title="点我一下"><img id="home-mascot-image" alt=""><span class="home-mascot-effect"
+            aria-hidden="true"></span></button></div>
+      <nav id="subject-nav" aria-label="学科导航"><a id="review-nav" class="nav-item" href="/review"><span><i
+              data-icon="book"></i>随机复习</span></a></nav>
       <a class="guide-link" href="/examples">Codex 问答示例 ↗</a>
       <div class="sidebar-bottom">
-        <div class="save-info"><span class="status-dot"></span><div><span id="local-status" role="status">本地文件题库</span><small>data/questions.json</small></div></div>
+        <div class="save-info"><span class="status-dot"></span>
+          <div><span id="local-status" role="status">本地文件题库</span><small>data/questions.json</small></div>
+        </div>
       </div>
     </aside>
     <main>
       <div class="workspace">
-        <section class="page-heading"><div><div class="eyebrow">A LITTLE BETTER, EVERY DAY</div><h1><span id="page-title-icon" class="page-title-icon"></span><span id="page-title">错题本</span><span class="heading-dot">。</span></h1><p>按专题收好思路，把不会的，变成会的。</p></div><div class="top-search"><label class="search"><i data-icon="search"></i><input id="search-input" placeholder="搜索题目、解析、备注…" aria-label="搜索错题"></label></div><button id="add-btn" class="primary"><i data-icon="plus"></i> 录入新题</button></section>
+
         <div id="sync-error" role="alert" hidden></div>
-        <div class="workbench">
+        <section id="review-panel" class="collection-panel" aria-labelledby="review-title" hidden>
+          <h1 id="review-title">随机复习</h1>
+          <form id="review-form" class="review-options">
+            <label>学科 <select id="review-subject">
+                <option value="">全部学科</option>
+              </select></label>
+            <label>题目数量 <select id="review-count">
+                <option>5</option>
+                <option>10</option>
+                <option>15</option>
+                <option>20</option>
+              </select></label>
+            <button type="submit" class="primary">随机抽题</button>
+          </form>
+          <p id="review-status" role="status">选好范围后点击「随机抽题」。</p>
+          <div id="review-progress" hidden>
+            <label for="review-progress-bar">本次复习进度 <span id="review-progress-label" aria-live="polite"></span></label>
+            <progress id="review-progress-bar" value="0" max="1"></progress>
+          </div>
+          <div id="review-results" class="question-list"></div>
+          <nav id="review-pagination" aria-label="复习题目切换" hidden>
+            <button id="review-prev" type="button" class="secondary">上一题</button>
+            <button id="review-next" type="button" class="primary">下一题</button>
+          </nav>
+        </section>
+        <div id="library-workbench" class="workbench">
+          <div class="collection-header">
+            <div class="sidebar-title"><span id="page-title-icon" class="page-title-icon"></span>
+              <h1 id="page-title">错题本</h1>
+            </div>
+          </div>
+          <div id="mobile-toolbar">
+            <div id="mobile-primary-tools"></div>
+            <details id="mobile-more">
+              <summary>更多</summary>
+              <div class="mobile-more-panel">
+                <div id="mobile-batch-tools"></div>
+                <button id="mobile-show-preview" type="button" aria-controls="mobile-print-panel" aria-expanded="false">打印预览与设置</button>
+                <a href="/examples">Codex 问答示例</a>
+              </div>
+            </details>
+          </div>
           <section class="collection-panel" id="collection-panel">
-            <div class="section-heading"><div><h2 id="collection-title">全部错题</h2><span id="collection-count"></span></div><button class="text-button" id="reset-filter">重置筛选 <i data-icon="rotate"></i></button></div>
-            <div class="filter-row"><div class="status-select"><button id="status-menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="status-menu"><span id="status-menu-label">全部状态</span><span class="date-chevron" aria-hidden="true"></span></button><select id="status-filter" hidden aria-hidden="true"><option value="">全部状态</option><option value="review">待复习</option><option value="mastered">已掌握</option></select></div>
-            <div class="date-filter"><div class="date-range-select"><span>时间维度</span><button id="date-menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="date-menu"><span id="date-menu-label">全部时间</span><span class="date-chevron" aria-hidden="true"></span></button><select id="date-preset" hidden aria-hidden="true"><option value="all">全部时间</option><option value="today">今天</option><option value="yesterday">昨天</option><option value="week">近 7 天</option><option value="month30">近 30 天</option><option value="this-month">本月</option><option value="last-month">上月</option><option value="custom">自定义</option></select></div><div id="custom-dates" class="custom-dates" hidden><label>从 <input id="date-from" type="date" aria-label="上传开始日期"></label><label>至 <input id="date-to" type="date" aria-label="上传结束日期"></label></div></div></div>
-            <div id="status-menu" class="date-menu" role="menu" hidden><button type="button" data-status="" role="menuitemradio">全部状态</button><button type="button" data-status="review" role="menuitemradio">待复习</button><button type="button" data-status="mastered" role="menuitemradio">已掌握</button></div>
-            <div id="date-menu" class="date-menu" role="menu" hidden><button type="button" data-date="all" role="menuitemradio">全部时间</button><button type="button" data-date="today" role="menuitemradio">今天</button><button type="button" data-date="yesterday" role="menuitemradio">昨天</button><button type="button" data-date="week" role="menuitemradio">近 7 天</button><button type="button" data-date="month30" role="menuitemradio">近 30 天</button><button type="button" data-date="this-month" role="menuitemradio">本月</button><button type="button" data-date="last-month" role="menuitemradio">上月</button><button type="button" data-date="custom" role="menuitemradio">自定义</button></div>
-            <div class="topic-filter"><div class="filter-label">题目类别 <span id="topic-summary">全部类别</span></div><div id="topic-options-filter" class="topic-options" role="group" aria-label="按题目类别多选"></div><button id="topic-expand" class="topic-expand" type="button" aria-expanded="false" hidden>展开全部类别</button></div>
-            <div class="selection-bar"><span id="selection-summary">已选 0 道</span><div><button id="select-visible" type="button">全选当前结果</button><button id="clear-selection" type="button">清空选择</button></div></div>
+
+
+            <div class="section-heading">
+              <div>
+                <h2 id="collection-title">全部错题</h2><span id="collection-count"></span>
+              </div><button class="text-button" id="reset-filter">重置筛选 <i data-icon="rotate"></i></button>
+            </div>
+            <div class="filter-row">
+              <div class="status-select"><button id="status-menu-button" type="button" aria-haspopup="true"
+                  aria-expanded="false" aria-controls="status-menu"><span id="status-menu-label">全部状态</span><span
+                    class="date-chevron" aria-hidden="true"></span></button><select id="status-filter" hidden
+                  aria-hidden="true">
+                  <option value="">全部状态</option>
+                  <option value="review">待复习</option>
+                  <option value="mastered">已掌握</option>
+                </select></div>
+              <div class="date-filter">
+                <div class="date-range-select"><span>时间维度</span><button id="date-menu-button" type="button"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="date-menu"><span
+                      id="date-menu-label">全部时间</span><span class="date-chevron"
+                      aria-hidden="true"></span></button><select id="date-preset" hidden aria-hidden="true">
+                    <option value="week">近 7 天</option>
+                    <option value="today">今天</option>
+                    <option value="yesterday">昨天</option>
+                    <option value="month30">近 30 天</option>
+                    <option value="this-month">本月</option>
+                    <option value="last-month">上月</option>
+                    <option value="all">全部时间</option>
+                    <option value="custom">自定义</option>
+                  </select></div>
+                <div id="custom-dates" class="custom-dates" hidden><label>从 <input id="date-from" type="date"
+                      aria-label="上传开始日期"></label><label>至 <input id="date-to" type="date" aria-label="上传结束日期"></label>
+                </div>
+              </div>
+              <div id="entry-kind-filter" class="segmented entry-kind-filter" role="group" aria-label="按条目类型筛选">
+                <button type="button" class="active" data-entry-kind="" aria-pressed="true">全部</button>
+                <button type="button" data-entry-kind="question" aria-pressed="false">错题</button>
+                <button type="button" data-entry-kind="note" aria-pressed="false">笔记</button>
+              </div>
+            </div>
+            <div id="status-menu" class="date-menu" role="menu" hidden><button type="button" data-status=""
+                role="menuitemradio">全部状态</button><button type="button" data-status="review"
+                role="menuitemradio">待复习</button><button type="button" data-status="mastered"
+                role="menuitemradio">已掌握</button></div>
+            <div id="date-menu" class="date-menu" role="menu" hidden><button type="button" data-date="all"
+                role="menuitemradio">全部时间</button><button type="button" data-date="today"
+                role="menuitemradio">今天</button><button type="button" data-date="yesterday"
+                role="menuitemradio">昨天</button><button type="button" data-date="week" role="menuitemradio">近 7
+                天</button><button type="button" data-date="month30" role="menuitemradio">近 30 天</button><button
+                type="button" data-date="this-month" role="menuitemradio">本月</button><button type="button"
+                data-date="last-month" role="menuitemradio">上月</button><button type="button" data-date="custom"
+                role="menuitemradio">自定义</button></div>
+            <div class="topic-filter">
+              <div class="filter-label">题目类别 <span id="topic-summary">全部类别</span></div>
+              <div id="topic-options-filter" class="topic-options" role="group" aria-label="按题目类别多选"></div><button
+                id="topic-expand" class="topic-expand" type="button" aria-expanded="false" hidden>展开全部类别</button>
+            </div>
+            <div class="selection-bar"><span id="selection-summary">已选 0 道</span>
+              <div id="batch-selection-tools"><button id="mark-mastered" type="button" disabled>标为已掌握</button><button id="mark-review"
+                  type="button" disabled>标为未掌握</button><button id="select-visible" type="button">全选当前结果</button><button
+                  id="clear-selection" type="button">清空选择</button></div>
+            </div>
             <div id="overview" class="overview" hidden></div>
             <div id="question-list" class="question-list"></div>
             <nav id="question-pagination" class="question-pagination" aria-label="题目分页"></nav>
-            <div class="collection-bottom"><i data-icon="info"></i><span>题目保存到本地 JSON；初始内容为示例。公式组件检查语法，解题结论仍需核对。</span></div>
+            <div class="collection-bottom"><i data-icon="info"></i><span>题目保存到本地 JSON；初始内容为示例。公式组件检查语法，解题结论仍需核对。</span>
+            </div>
           </section>
           <section class="editor-panel" id="editor-panel" hidden>
-            <div class="section-heading"><div><button id="back-btn" class="icon-button" title="返回题库" aria-label="返回题库"><i data-icon="arrow-left"></i></button><h2 id="editor-heading">录入新题</h2></div><span class="editing-label">实时预览中</span></div>
+            <div class="section-heading">
+              <div><button id="back-btn" class="icon-button" title="返回题库" aria-label="返回题库"><i
+                    data-icon="arrow-left"></i></button>
+                <h2 id="editor-heading">录入新题</h2>
+              </div><span class="editing-label">实时预览中</span>
+            </div>
             <form id="question-form">
-              <div class="form-grid"><label><span class="field-label">学科</span><select id="f-subject" required></select></label><label><span class="field-label">专题 <span class="required">*</span></span><select id="f-topic" required></select></label></div>
-              <div class="formula-tools"><span>插入</span><button type="button" id="insert-image">插入图片</button><button type="button" data-insert="fraction">分式</button><button type="button" data-insert="power">上下标</button><button type="button" data-insert="chem">化学式</button><small>先点编辑区中的插入位置</small></div>
-              <label>题目<textarea id="f-question" rows="4" required maxlength="20000" placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea></label>
-              <section class="editor-images" aria-labelledby="editor-images-title"><header class="editor-images-heading"><div><h3 id="editor-images-title">本题图片</h3><span id="editor-image-count">0 / 20</span></div><label class="image-upload-button">上传图片<input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" multiple></label></header><p class="field-help">上传后点击上方“插入图片”，放到光标位置；点击蓝色图片标记可调整大小。支持 PNG、JPEG、WebP，每张最多 10 MB。</p><div id="editor-image-list"></div><p id="image-message" role="status"></p></section>
-              <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000" placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000" placeholder="易错原因、记忆提示…"></textarea></label></div>
-              <label>解析<textarea id="f-explanation" rows="4" maxlength="20000" placeholder="写下解题思路，为什么对，为什么错。"></textarea></label>
+              <div class="form-grid"><label><span class="field-label">学科</span>
+                  <div class="editor-select" data-editor-select="f-subject"><button id="f-subject-menu-button"
+                      type="button" aria-haspopup="true" aria-expanded="false" aria-controls="f-subject-menu"><span
+                        id="f-subject-menu-label">选择学科</span><span class="date-chevron"
+                        aria-hidden="true"></span></button><select id="f-subject" required hidden
+                      aria-hidden="true"></select></div>
+                </label><label><span class="field-label">专题</span>
+                  <div class="editor-select" data-editor-select="f-topic"><button id="f-topic-menu-button" type="button"
+                      aria-haspopup="true" aria-expanded="false" aria-controls="f-topic-menu"><span
+                        id="f-topic-menu-label">选择类别</span><span class="date-chevron"
+                        aria-hidden="true"></span></button><select id="f-topic" required hidden
+                      aria-hidden="true"></select></div>
+                </label><label for="f-kind"><span class="field-label">条目类型</span>
+                  <select id="f-kind">
+                    <option value="question">错题</option>
+                    <option value="note">笔记</option>
+                  </select>
+                </label></div>
+              <div class="formula-tools"><button type="button" id="insert-image" class="tool-icon-button"><svg
+                    class="icon insert-image-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+                    <circle cx="8.5" cy="9.5" r="1.6" />
+                    <path d="m4 17 4.8-4.8a1.6 1.6 0 0 1 2.26 0L16 17" />
+                    <path d="m13.5 14.5 1.9-1.9a1.6 1.6 0 0 1 2.26 0L21 16" />
+                  </svg><span>插入图片</span></button><button type="button" data-insert="fraction">分式</button><button
+                  type="button" data-insert="power">上下标</button><button type="button"
+                  data-insert="chem">化学式</button><button type="button" data-wrap="bold" title="加粗选中文字（**文字**）"
+                  class="wrap-button"><b>B</b></button><button type="button" data-wrap="underline"
+                  title="给选中文字加下划线（__文字__）" class="wrap-button"><u>U</u></button></div>
+              <label>题目<textarea id="f-question" rows="4" required maxlength="20000"
+                  placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea></label>
+              <section class="editor-images" aria-labelledby="editor-images-title">
+                <header class="editor-images-heading">
+                  <div>
+                    <h3 id="editor-images-title">本题图片</h3><span id="editor-image-count">0 / 20</span>
+                  </div><label class="image-upload-button">上传图片<input id="image-upload" type="file"
+                      accept="image/png,image/jpeg,image/webp" multiple></label>
+                </header>
+                <p class="field-help">上传后点击上方“插入图片”，放到光标位置；点击蓝色图片标记可调整大小。支持 PNG、JPEG、WebP，每张最多 10 MB。</p>
+                <div id="editor-image-list"></div>
+                <p id="image-message" role="status"></p>
+              </section>
+              <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000"
+                    placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000"
+                    placeholder="易错原因、记忆提示…"></textarea></label></div>
+              <div class="image-insert-field"><button type="button" class="secondary field-insert-image"
+                  data-insert-image-field="explanation" aria-label="在解析中插入图片">插入图片</button><label>解析<textarea
+                    id="f-explanation" rows="4" maxlength="20000" placeholder="写下解题思路，为什么对，为什么错。"></textarea></label>
+              </div>
               <section id="chemistry-panel" class="chemistry-panel">
-                <div class="chemistry-heading"><span><i data-icon="flask"></i>化学核查助手</span><span class="small-tag">规则辅助</span></div>
-                <label>排版方程式<input id="f-equation" maxlength="2000" placeholder="如 \(\ce{2H2 + O2 -> 2H2O}\)" aria-describedby="equation-help"></label>
-                <label>守恒核查用原式（可选）<input id="f-equationPlain" maxlength="2000" placeholder="如 2H2 + O2 = 2H2O"></label><p id="equation-help" class="field-help">简单方程式自动核查；复杂条件或配合物请另填原式。排版不会自动配平或证明反应成立。</p>
+                <div class="chemistry-heading"><span><i data-icon="flask"></i>化学核查助手</span><span
+                    class="small-tag">规则辅助</span></div>
+                <label>排版方程式<input id="f-equation" maxlength="2000" placeholder="如 \(\ce{2H2 + O2 -> 2H2O}\)"
+                    aria-describedby="equation-help"></label>
+                <label>守恒核查用原式（可选）<input id="f-equationPlain" maxlength="2000" placeholder="如 2H2 + O2 = 2H2O"></label>
+                <p id="equation-help" class="field-help">简单方程式自动核查；复杂条件或配合物请另填原式。排版不会自动配平或证明反应成立。</p>
                 <div id="chemistry-results" aria-live="polite"></div>
               </section>
               <div id="formula-check" class="formula-check" aria-live="polite"></div>
-              <div class="form-footer"><label class="checkbox"><input type="checkbox" id="f-mastered"> 这道题已掌握</label><div><button type="button" id="cancel-btn" class="secondary">取消</button><button type="submit" class="primary" id="save-question-btn"><i data-icon="check"></i>保存到本地</button></div></div>
+              <div class="form-footer"><label class="mastery-switch editor-mastery" title="点一下切换已掌握"><input
+                    type="checkbox" id="f-mastered" role="switch" aria-label="这道题是否已掌握"><span class="mastery-track"
+                    aria-hidden="true"></span><span class="mastery-label">待复习</span></label>
+                <div><button type="button" id="cancel-btn" class="secondary">取消</button><button type="submit"
+                    class="primary" id="save-question-btn"><i data-icon="check"></i>保存到本地</button></div>
+              </div>
+              <div id="f-subject-menu" class="date-menu" role="menu" hidden></div>
+              <div id="f-topic-menu" class="date-menu" role="menu" hidden></div>
               <p id="form-message" role="alert" class="form-message"></p>
             </form>
           </section>
-          <aside class="preview-panel">
-            <div class="section-heading"><div><i data-icon="layout"></i><h2>打印预览</h2></div><span class="live-badge"><span></span>实时同步</span></div>
-            <div class="print-controls"><select id="paper-size" aria-label="纸张大小"><option value="B5">B5 纸张</option><option value="A4">A4 纸张</option></select><div class="segmented" aria-label="栏数"><button id="single-column" aria-pressed="false">单栏</button><button id="double-column" class="active" aria-pressed="true">双栏</button></div></div>
-            <div class="print-options"><label class="checkbox"><input type="checkbox" id="compact-mode" checked>紧凑排版</label><label class="checkbox"><input type="checkbox" id="show-answer" checked>答案</label><label class="checkbox"><input type="checkbox" id="show-explanation" checked>解析</label><label class="checkbox"><input type="checkbox" id="show-notes" checked>备注</label></div>
-            <div class="preview-stage" id="preview-stage"><div id="preview-canvas"></div><div id="preview-empty" hidden><i data-icon="file"></i><p>勾选题目后显示打印预览</p><small>可在左侧全选当前结果</small></div></div>
-            <div class="preview-pagination"><span id="preview-meta">B5 · 双栏 · 约 9 pt</span><div><button id="prev-page" class="icon-button" aria-label="预览上一页"><i data-icon="chevron-left"></i></button><span id="page-indicator">1 / 1</span><button id="next-page" class="icon-button" aria-label="预览下一页"><i data-icon="chevron-right"></i></button></div></div>
-            <button id="print-btn" class="print-button"><i data-icon="printer"></i>导出 PDF <span id="print-count"></span></button>
-            <p class="preview-help">在打印窗口选择“保存为 PDF”并指定本地位置；建议缩放设为 100%。</p>
-          </aside>
+          <div class="right-rail">
+            <div class="heading-tools">
+              <div class="top-search"><label class="search"><i data-icon="search"></i><input id="search-input"
+                    placeholder="搜索题目、解析、备注…" aria-label="搜索错题"></label></div><button id="add-btn" class="primary"><i
+                  data-icon="plus"></i> 录入新题</button>
+            </div>
+            <aside class="preview-panel" id="mobile-print-panel">
+              <div class="section-heading">
+                <div><i data-icon="layout"></i>
+                  <h2>打印预览</h2>
+                </div><span class="live-badge"><span></span>实时同步</span>
+                <button id="mobile-close-preview" type="button" class="secondary">收起</button>
+              </div>
+              <div class="print-controls">
+                <div class="paper-select"><button id="paper-menu-button" type="button" aria-haspopup="true"
+                    aria-expanded="false" aria-controls="paper-menu"><span id="paper-menu-label">B5 纸张</span><span
+                      class="date-chevron" aria-hidden="true"></span></button><select id="paper-size" hidden
+                    aria-hidden="true">
+                    <option value="B5">B5 纸张</option>
+                    <option value="A4">A4 纸张</option>
+                  </select></div>
+                <div id="paper-menu" class="date-menu" role="menu" hidden><button type="button" data-paper="B5"
+                    role="menuitemradio">B5 纸张</button><button type="button" data-paper="A4" role="menuitemradio">A4
+                    纸张</button></div>
+                <div class="segmented" aria-label="栏数"><button id="single-column"
+                    aria-pressed="false">单栏</button><button id="double-column" class="active"
+                    aria-pressed="true">双栏</button></div>
+              </div>
+              <div class="print-options"><label class="checkbox"><input type="checkbox" id="compact-mode"
+                    checked>紧凑排版</label><label class="checkbox"><input type="checkbox" id="show-answer"
+                    checked>答案</label><label class="checkbox"><input type="checkbox" id="show-explanation"
+                    checked>解析</label><label class="checkbox"><input type="checkbox" id="show-notes" checked>备注</label>
+              </div>
+              <div class="preview-stage" id="preview-stage">
+                <div id="preview-canvas"></div>
+                <button id="preview-btn" type="button" aria-haspopup="dialog" aria-controls="pdf-preview-dialog">放大预览</button>
+                <div id="preview-empty" hidden><i data-icon="file"></i>
+                  <p>勾选题目后显示打印预览</p><small>可在左侧全选当前结果</small>
+                </div>
+              </div>
+              <div class="preview-pagination"><span id="preview-meta">B5 · 双栏 · 约 9 pt</span>
+                <div><button id="prev-page" class="icon-button" aria-label="预览上一页"><i
+                      data-icon="chevron-left"></i></button><span id="page-indicator">1 / 1</span><button id="next-page"
+                    class="icon-button" aria-label="预览下一页"><i data-icon="chevron-right"></i></button></div>
+              </div>
+              <button id="print-btn" class="print-button"><i data-icon="printer"></i>导出 PDF <span
+                  id="print-count"></span></button>
+            </aside>
+          </div>
         </div>
       </div>
     </main>
   </div>
-  <div id="print-root" aria-hidden="true"></div><div id="measure-root" aria-hidden="true"></div>
+  <div id="print-root" aria-hidden="true"></div>
+  <div id="measure-root" aria-hidden="true"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <dialog id="image-dialog" class="image-dialog" aria-label="题图大图"><button id="image-close" class="image-close" aria-label="关闭大图">×</button><img id="image-large" alt=""><p id="image-caption"></p></dialog>
-  <dialog id="image-picker" class="editor-image-dialog" aria-labelledby="image-picker-title"><header><div><h3 id="image-picker-title">插入图片</h3><p id="image-picker-target">选择本题的一张图片</p></div><button id="image-picker-close" type="button" class="dialog-close" aria-label="关闭图片选择">×</button></header><div id="image-picker-list"></div><footer><button id="image-picker-upload" type="button" class="secondary">上传新图片</button></footer></dialog>
-  <dialog id="image-scale-dialog" class="editor-image-dialog scale-dialog" aria-labelledby="image-scale-title"><header><div><h3 id="image-scale-title">图片大小</h3><p>按内容区域宽度缩放，列表和打印同步生效。</p></div></header><div class="image-scale-stage"><img id="image-scale-preview" alt=""></div><label class="image-scale-control" for="image-scale-value"><span>缩放比例</span><input type="range" id="image-scale-value" min="10" max="100" step="5" value="60"><output id="image-scale-output" for="image-scale-value">60%</output></label><footer><button id="image-scale-cancel" type="button" class="secondary">取消</button><button id="image-scale-apply" type="button" class="primary">应用</button></footer></dialog>
-  <dialog id="confirm-dialog"><h3 id="confirm-title">删除这道题？</h3><p id="confirm-message">删除后无法恢复，建议先导出备份。</p><div><button id="confirm-cancel" class="secondary">取消</button><button id="confirm-ok" class="danger">删除</button></div></dialog>
+  <dialog id="pdf-preview-dialog" class="pdf-preview-dialog" aria-labelledby="pdf-preview-title">
+    <header>
+      <h3 id="pdf-preview-title">打印预览</h3>
+      <button id="pdf-preview-close" type="button" aria-label="关闭打印大图" autofocus>×</button>
+    </header>
+    <section id="pdf-preview-dialog-body" class="pdf-preview-dialog-body" aria-label="放大的打印页" tabindex="0"></section>
+  </dialog>
+  <dialog id="image-dialog" class="image-dialog" aria-label="题图大图"><button id="image-close" class="image-close"
+      aria-label="关闭大图">×</button><img id="image-large" alt="">
+    <p id="image-caption"></p>
+  </dialog>
+  <dialog id="image-picker" class="editor-image-dialog" aria-labelledby="image-picker-title">
+    <header>
+      <div>
+        <h3 id="image-picker-title">插入图片</h3>
+        <p id="image-picker-target">选择本题的一张图片</p>
+      </div><button id="image-picker-close" type="button" class="dialog-close" aria-label="关闭图片选择">×</button>
+    </header>
+    <div id="image-picker-list"></div>
+    <footer><button id="image-picker-upload" type="button" class="secondary">上传新图片</button></footer>
+  </dialog>
+  <dialog id="image-scale-dialog" class="editor-image-dialog scale-dialog" aria-labelledby="image-scale-title">
+    <header>
+      <div>
+        <h3 id="image-scale-title">图片大小</h3>
+        <p>按内容区域宽度缩放，列表和打印同步生效。</p>
+      </div>
+    </header>
+    <div class="image-scale-stage"><img id="image-scale-preview" alt=""></div><label class="image-scale-control"
+      for="image-scale-value"><span>缩放比例</span><input type="range" id="image-scale-value" min="10" max="100" step="5"
+        value="60"><output id="image-scale-output" for="image-scale-value">60%</output></label>
+    <footer><button id="image-scale-cancel" type="button" class="secondary">取消</button><button id="image-scale-apply"
+        type="button" class="primary">应用</button></footer>
+  </dialog>
+  <dialog id="image-process-dialog" class="editor-image-dialog" aria-labelledby="image-process-title">
+    <header>
+      <div><h3 id="image-process-title">处理图片</h3><p id="image-process-name"></p></div>
+      <button id="image-process-close" type="button" class="dialog-close" aria-label="关闭图片处理">×</button>
+    </header>
+    <div class="image-process-layout">
+      <section class="image-process-preview" aria-label="图片预览">
+        <div class="image-process-stage">
+          <div class="image-process-frame">
+            <canvas id="image-process-canvas" width="1" height="1" role="img" aria-label="处理后的题图预览"></canvas>
+            <div id="image-process-crop-box" aria-hidden="true" hidden></div>
+          </div>
+        </div>
+        <p>在图上拖动框选保留区域，也可输入裁掉的边距。</p>
+      </section>
+      <section id="image-process-controls" aria-label="处理设置" inert>
+        <div class="image-process-buttons">
+          <button id="image-process-left" type="button" class="secondary">左转 90°</button>
+          <button id="image-process-right" type="button" class="secondary">右转 90°</button>
+        </div>
+        <label class="image-process-slider" for="image-process-angle">校正倾斜 <output id="image-process-angle-text" for="image-process-angle">0°</output>
+          <input id="image-process-angle" type="range" min="-15" max="15" step="0.1" value="0">
+        </label>
+        <label class="image-process-slider" for="image-process-contrast">对比度 <output id="image-process-contrast-text" for="image-process-contrast">0</output>
+          <input id="image-process-contrast" type="range" min="-50" max="100" value="0">
+        </label>
+        <label class="checkbox"><input id="image-process-gray" type="checkbox">黑白（灰度）</label>
+        <fieldset class="image-process-margins">
+          <legend>裁掉的边距（%）</legend>
+          <label>左 <input id="image-process-crop-left" type="number" min="0" max="95" value="0"></label>
+          <label>右 <input id="image-process-crop-right" type="number" min="0" max="95" value="0"></label>
+          <label>上 <input id="image-process-crop-top" type="number" min="0" max="95" value="0"></label>
+          <label>下 <input id="image-process-crop-bottom" type="number" min="0" max="95" value="0"></label>
+        </fieldset>
+        <div class="image-process-buttons">
+          <button id="image-process-preview-toggle" type="button" class="secondary" aria-pressed="false">预览裁切</button>
+          <button id="image-process-reset" type="button" class="secondary">重置</button>
+        </div>
+      </section>
+    </div>
+    <p id="image-process-status" role="status"></p>
+    <footer><button id="image-process-cancel" type="button" class="secondary">取消</button><button id="image-process-apply" type="button" class="primary" disabled>应用到题图</button></footer>
+  </dialog>
+  <dialog id="confirm-dialog">
+    <h3 id="confirm-title">删除这道题？</h3>
+    <p id="confirm-message">删除后无法恢复，建议先导出备份。</p>
+    <div><button id="confirm-cancel" class="secondary">取消</button><button id="confirm-ok" class="danger">删除</button>
+    </div>
+  </dialog>
   <style id="dynamic-print-style"></style>
-</body></html>
+</body>
+
+</html>

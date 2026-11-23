@@ -20,7 +20,7 @@ async function editorFixture(){
  const ids=['image-upload','editor-image-list','image-message','save-question-btn','f-question','f-answer','f-explanation','f-notes','f-equation'];
  const fields=Object.fromEntries(ids.map(id=>[id,{value:'',innerHTML:''}]));let changed=0,sequence=0;
  const context={window:{},document:{getElementById:id=>fields[id]},ImageReferences,Formula:{escape:s=>s},
-  crypto:{randomUUID:()=>String(++sequence)},
+  crypto:{randomUUID:()=>String(++sequence),getRandomValues:array=>{array[0]=sequence++;return array;}},
   FileReader:class {readAsDataURL(){this.result='data:image/png;base64,test';this.onload();}},
   Image:class {set src(value){this.onload();}},
   fetch:async()=>({ok:true,json:async()=>({file:'saved-'+(++sequence)+'.png'})})};

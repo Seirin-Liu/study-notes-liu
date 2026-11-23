@@ -45,3 +45,32 @@
 .date-menu button.active::after{content:'✓';}
 .custom-dates{display:flex;align-items:center;gap:6px;}
 .custom-dates[hidden]{display:none;}
+
+.entry-kind-filter {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline-start: auto;
+  border-color: #e1e4e8;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+.entry-kind-filter button {
+  min-height: 38px;
+  min-width: 64px;
+  color: #565e68;
+  font-size: 14px;
+  border-radius: 6px;
+}
+.entry-kind-filter button:hover { background: #e8eaed; }
+.entry-kind-filter button.active { background: #fff; color: #202123; }
+.entry-kind-filter button:focus-visible { outline: 2px solid #618bbd; outline-offset: 1px; }
+.overview-mode .entry-kind-filter { display: none; }
+.entry-kind-tag { background: #edf0f4; color: #4b5563; }
+@media screen and (min-width: 641px) {
+  #collection-panel > .filter-row { flex-wrap: wrap; }
+}
+@media screen and (max-width: 640px) {
+  .entry-kind-filter { grid-column: 1 / -1; justify-self: end; }
+  .entry-kind-filter button { min-height: 44px; }
+}
