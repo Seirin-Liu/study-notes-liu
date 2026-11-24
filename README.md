@@ -7,6 +7,7 @@
 这个项目的长期目标是：在自己的电脑上运行，由本地 Codex 接管项目文件夹。你在 Codex 发送卷子照片，它识别并核对题目、生成程序支持的数据，直接修改本地题库；必要题图也由 Codex 处理并保存在项目内。网页用于按学科、条目类型、上传时间和专题筛选，再勾选要打印的条目，右侧展示本次所选题目的打印预览。
 
 - [完整目标与验收标准](docs/PRODUCT_GOAL.md)
+- [错题与笔记整理流程图](docs/QUESTION_WORKFLOW.md)
 - [本地 Codex 接管、照片录题和备份流程](docs/LOCAL_CODEX_WORKFLOW.md)
 - [当前实现状态与后续开发顺序](docs/IMPLEMENTATION_STATUS.md)
 - [Codex 工作规则](AGENTS.md)与[当前题目格式](QUESTION_FORMAT.md)
