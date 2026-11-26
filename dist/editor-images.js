@@ -1,11 +1,11 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  const fields = ['question', 'answer', 'explanation', 'notes', 'equation'];
-  const labels = {question: '题目', answer: '答案', explanation: '解析', notes: '备注', equation: '排版方程式'};
+  const fields = ['question', 'answer', 'explanation', 'notes'];
+  const labels = {question: '题目', answer: '答案', explanation: '解析', notes: '备注'};
   const escape = value => Formula.escape(String(value));
 
-  // Keep canonical textarea values for validation/save; render only image markers as chips.
+  // Serialize editable image chips and colored spans back to their stored markers.
   function plainText(node) {
     if (node.nodeType === 3) return node.nodeValue;
     if (node.nodeType === 1 && node.hasAttribute('data-image-token')) return node.dataset.imageToken;
@@ -17,7 +17,8 @@
       text += plainText(child);
       if (block && child.nextSibling && !text.endsWith('\n')) text += '\n';
     }
-    return text;
+    const color = node.nodeType === 1 && node.dataset.savedColor;
+    return color && text ? `[${color}]${text}[/${color}]` : text;
   }
 
   class ImageEditor {
@@ -53,7 +54,7 @@
         catch (error) { this.message(error.message); }
       };
       if (document.createElement) this.setupEditors();
-      if ($('insert-image')) $('insert-image').onclick = () => this.openPicker();
+      if ($('insert-image')) $('insert-image').onclick = () => this.openPicker('question');
       document.querySelectorAll?.('[data-insert-image-field]').forEach(button => {
         button.onclick = () => this.openPicker(button.dataset.insertImageField);
       });
@@ -183,7 +184,7 @@
     }
 
     fieldHTML(text) {
-      return ImageReferences.parts(text).map(part => part.type === 'image' ? this.chipHTML(part) : escape(part.value)).join('');
+      return ImageReferences.parts(text).map(part => part.type === 'image' ? this.chipHTML(part) : Formula.colorText(part.value, escape, true)).join('');
     }
 
     syncFields() {
@@ -214,6 +215,18 @@
       entry.input.value = plainText(entry.editor);
       this.rememberCaret(entry);
       entry.input.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+
+    colorSelection(field, color) {
+      const entry = this.editors.get(field);
+      const range = entry?.range;
+      if (!range || range.collapsed || !entry.editor.contains(range.commonAncestorContainer)) return false;
+      const selected = range.cloneContents();
+      if (!selected.textContent.trim() || selected.querySelector('[data-image-token]')) return false;
+      this.active = entry;
+      const text = plainText(selected).replace(/\[\/?(?:black|red|blue)\]/g, '');
+      this.insertText(`[${color}]${text}[/${color}]`);
+      return true;
     }
 
     focusField(field) {

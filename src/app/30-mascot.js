@@ -1,8 +1,6 @@
 // 侧栏比格多栋表情与点击动效。
   const mascotReactions=[
     {motion:'original',file:'brand-dog.png',clickFile:'brand-dog-wave.png',name:'挥拳的比格多栋',src:'/brand-dog.png'},
-    {motion:'fist',file:'beagle-fist-hi.png',name:'举拳的比格多栋·高清',src:'/mascots/beagle-fist-hi.png'},
-    {motion:'original',file:'beagle-scream.png',name:'尖叫的比格多栋'},
     {motion:'smug',file:'beagle-smug.png',name:'得意的比格多栋'},
     {motion:'sad',file:'beagle-sad.png',name:'委屈的比格多栋'},
     {motion:'pleading',file:'beagle-pleading.png',name:'撒娇的比格多栋'}

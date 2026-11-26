@@ -103,3 +103,21 @@ test('B and U are pure toggles with no extra cancel buttons',()=>{
  // The buttons carry their own titles, so the helper text is redundant.
  assert.match(html,/data-wrap="bold" title="加粗选中文字/);
 });
+
+test('saved colors preserve formatted text, complete formulas and nested colors',()=>{
+ const F=loadFormula();
+ assert.equal(F.render('[red]**重点**[blue]蓝色[/blue][/red]'),
+   '<span class="text-color-red"><strong>重点</strong><span class="text-color-blue">蓝色</span></span>');
+ assert.match(F.render('[black]由 \\(x=1\\)[/black]'),/text-color-black.*katex-stub/);
+ assert.equal(F.render('[red]<script>[/red]'),'<span class="text-color-red">&lt;script&gt;</span>');
+ assert.equal(F.render('[green]文字[/green] [blue]'), '[green]文字[/green] [blue]');
+});
+
+test('the explanation toolbar targets the explanation and includes all formatting tools',()=>{
+ const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
+ const toolbar=html.match(/data-tool-field="explanation"[\s\S]*?<\/div>/)[0];
+ for(const tool of ['explanation','fraction','power','chem','bold','underline','black','red','blue']){
+   assert.ok(toolbar.includes('"'+tool+'"'));
+ }
+ assert.match(toolbar,/data-insert-image-field="explanation"/);
+});

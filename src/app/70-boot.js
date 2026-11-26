@@ -1,5 +1,5 @@
 // 事件绑定与启动流程。
-document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>{const snippets={fraction:'\\(\\frac{a}{b}\\)',power:'\\(a_n^2\\)',chem:'\\(\\ce{H2O}\\)'};editorImages.insertText(snippets[b.dataset.insert]);});
+document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>{const snippets={fraction:'\\(\\frac{a}{b}\\)',power:'\\(a_n^2\\)',chem:'\\(\\ce{H2O}\\)'};const field=b.closest('[data-tool-field]')?.dataset.toolField;if(field)editorImages.focusField(field);editorImages.insertText(snippets[b.dataset.insert]);});
   function subjectFromPath(){const name=location.pathname.split('/')[1];return subjects.some(s=>s.id===name)?name:'';}
   function routeEditor(){const match=location.pathname.match(/^\/(chemistry|biology|math|physics|chinese|english)\/edit\/(new|[-a-zA-Z0-9_]+)$/);return match?{subject:match[1],id:match[2]}:null;}
   selectedSubject=subjectFromPath();

@@ -2,12 +2,11 @@
   async function updatePreview(){clearTimeout(previewTimer);try{await Printer.render(editing?[draft()]:selectedSubject?selectedQuestions():[],state.settings,editing?subject($('f-subject').value).name+'错题专题集':titleFor(),Object.fromEntries(subjects.map(s=>[s.id,s.name])));}catch(e){$('preview-meta').textContent='预览失败：'+e.message;$('print-btn').disabled=true;}}
   $('prev-page').onclick=()=>Printer.previous();$('next-page').onclick=()=>Printer.next();window.addEventListener('resize',Printer.scale);window.addEventListener('resize',()=>{if(selectedSubject)renderTopics();});$('print-btn').onclick=async()=>{await updatePreview();if(!$('print-btn').disabled)window.print();};
   const previewCanvas = $('preview-canvas');
-  const enlargePreviewButton = $('preview-btn');
   const previewDialog = $('pdf-preview-dialog');
   const previewDialogBody = $('pdf-preview-dialog-body');
   const closePreviewButton = $('pdf-preview-close');
 
-  if (previewCanvas && enlargePreviewButton && previewDialog && previewDialogBody && closePreviewButton) {
+  if (previewCanvas && previewDialog && previewDialogBody && closePreviewButton) {
     function fitEnlargedPage() {
       const holder = previewDialogBody.firstElementChild;
       if (!previewDialog.open || !holder) return;
@@ -33,7 +32,6 @@
       previewDialogBody.scrollTop = 0;
     }
 
-    enlargePreviewButton.addEventListener('click', enlargeCurrentPage);
     previewCanvas.addEventListener('click', event => {
       if (event.target.closest('.paper-page') && !event.target.closest('[data-image]')) {
         enlargeCurrentPage();
@@ -49,7 +47,7 @@
     window.addEventListener('resize', fitEnlargedPage);
   }
 
-    function editorFields(){return ['f-question','f-answer','f-explanation','f-notes','f-equation','f-equationPlain'].map(id=>$(id)).filter(Boolean);}
+    function editorFields(){return ['f-question','f-answer','f-explanation','f-notes'].map(id=>$(id)).filter(Boolean);}
   let lastField=null;
   function lastFocusedField(){
     const fields=editorFields();

@@ -1,1 +1,37 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>知序 · Codex 问答示例</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="readability.css"></head><body><main class="guide-page" style="width:100%;margin:auto"><a href="/overview">← 返回工作台</a><h1>把题目交给 Codex，文件交给知序。</h1><p>在本地 Codex 打开本项目文件夹后，发送题目图片或文字，指定学科和专题。Codex 会生成标准 JSON、检查公式并写入题库；浏览器约每 2 秒自动读取一次文件。</p><h2>最常用的指令</h2><pre>把这道题整理到“化学 / 硫”专题。按照 AGENTS.md 和 QUESTION_FORMAT.md 的格式，题干、答案、解析和备注中的所有公式都用 LaTeX，化学式用 mhchem。核对方程式、反应条件和答案后写入本地题库，并运行校验。</pre><h2>文件在哪里</h2><table><tr><th>文件</th><th>作用</th></tr><tr><td>data/questions.json</td><td>完整题库，浏览器自动读取</td></tr><tr><td>examples/new-question.json</td><td>可参考的单题格式</td></tr><tr><td>QUESTION_FORMAT.md</td><td>完整字段与公式说明</td></tr><tr><td>data/history/</td><td>题目修改前的快照</td></tr></table><h2>公式语法</h2><p>行内用 <code>\( ... \)</code>，独立公式用 <code>\[ ... \]</code>；化学式用 <code>\(\ce{H2O}\)</code>。在 JSON 源文件里，反斜杠需要双写。完整示例在 examples 文件夹。</p><h2>录入命令</h2><pre>node scripts/add-question.mjs examples/new-question.json</pre><pre>node scripts/validate.mjs</pre><p>同 id 更新时在录入命令末尾加 <code>--replace</code>。公式语法检查通过不代表答案或反应一定正确，保存前仍需核对题意。</p></main></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Codex 问答示例 · 比格多栋</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/readability.css">
+</head>
+<body>
+  <main class="guide-page" style="width:100%;margin:auto">
+    <a href="/overview">← 返回工作台</a>
+    <h1>Codex 问答示例</h1>
+    <p>在本地 Codex 打开错题本项目，发送照片、PDF 或文字，说明要整理的范围。写入后，工作台会自动检测题库文件的变化。</p>
+
+    <h2>录入试卷错题</h2>
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere">把附件的第 5、6、9 题加入数学错题本，分类用「数列」。保留原题，填写答案和解析。有卷名和题号时自动填写来源，例如「高三数学周练 12 第9题」。信息不全就留空。解析写清关键一步，备注只写易错点。</pre>
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere">把化学试卷第 2 题 C、第 3 题 A 和 C 分别录成判断题。答案只写「正确」或「错误」，每条都写解析，备注留空。化学式和方程式用公式排版。需要题图时裁掉无关区域、转正并做黑白清晰化。</pre>
+
+    <h2>把笔记整理成可打印条目</h2>
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere">把这份 PDF 整理成一条化学笔记。题目栏写笔记标题，解析栏按原笔记的分点顺序整理，重要公式用公式排版。需要保留的图截取后插在对应段落，答案和备注留空。</pre>
+    <p>在学科页顶部选「笔记」，勾选条目后打开打印预览，并勾选「解析」。打印编号按勾选顺序排列。</p>
+
+    <h2>公式、格式和图片</h2>
+    <ul>
+      <li>行内公式用 <code>\( ... \)</code>，独立公式用 <code>\[ ... \]</code>，化学式例如 <code>\(\ce{SO4^2-}\)</code>。写入 JSON 时，公式的反斜杠需要双写。</li>
+      <li>题目和解析工具栏支持插入分式、上下标和化学式。选中文字可加粗、加下划线，或设为黑、红、蓝。</li>
+      <li>在「本题图片」中上传或处理图片，再从题目或解析工具栏选图插入。点击编辑器里的图片标记可调整比例，点击打印预览里的图片可查看大图。</li>
+    </ul>
+
+    <h2>本地录入命令</h2>
+    <pre>node scripts/add-question.mjs examples/new-question.json
+node scripts/validate.mjs</pre>
+    <p>题库按学科保存在 <code>data/subjects/</code>，题图保存在 <code>data/assets/</code>。更新同一条记录时，在录入命令末尾加 <code>--replace</code>。完整字段和图片引用格式见项目内的 <code>QUESTION_FORMAT.md</code>。</p>
+  </main>
+</body>
+</html>

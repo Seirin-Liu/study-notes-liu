@@ -10,13 +10,11 @@
 .home-mascot[data-motion="pleading"] img { transform: scale(1.20); }
 .home-mascot[data-motion="sad"] img { transform: scale(1.16); }
 .home-mascot[data-motion="smug"] img { transform: scale(.96); }
-.home-mascot[data-motion="fist"] img { transform: scale(1.02); }
 .home-mascot[data-motion="original"] img { transform: scale(1); }
 .home-mascot:hover { transform: translateY(-2px); filter: drop-shadow(0 12px 16px rgba(31,35,40,.12)); }
 .home-mascot:focus-visible { outline: 2px solid #8eafe0; outline-offset: 5px; }
 .home-mascot-effect { position: absolute; inset: 7%; pointer-events: none; opacity: 0; }
 .home-mascot.is-playing[data-motion="smug"] { animation: mascot-smug 850ms cubic-bezier(.2,.8,.2,1); }
-.home-mascot.is-playing[data-motion="fist"] { animation: mascot-fist 900ms cubic-bezier(.2,.8,.25,1); }
 .home-mascot.is-playing[data-motion="sad"] { animation: mascot-sad 1100ms ease-in-out; }
 .home-mascot.is-playing[data-motion="pleading"] { animation: mascot-pleading 900ms cubic-bezier(.2,.9,.3,1); }
 .home-mascot.is-playing[data-motion="original"] { animation: mascot-original 780ms ease-in-out; }
@@ -28,19 +26,13 @@
   content: "✦  ✦"; position: absolute; inset: 5px -16px auto; color: #7ba8df;
   font-size: 21px; text-align: center; animation: mascot-sparkle 900ms ease-out;
 }
-.home-mascot.is-playing[data-motion="fist"] .home-mascot-effect::before {
-  content: "✦"; position: absolute; right: 4px; top: -9px; color: #f4b942;
-  font-size: 30px; text-shadow: 0 1px 3px rgba(160,104,22,.18); animation: mascot-fist-spark 900ms ease-out;
-}
 .home-mascot.is-playing .home-mascot-effect { opacity: 1; }
 @keyframes mascot-smug { 0%,100%{transform:rotate(0) translateY(0)} 22%{transform:rotate(-5deg) translateY(-3px)} 48%{transform:rotate(5deg) translateY(-5px)} 72%{transform:rotate(-2deg) translateY(-2px)} }
-@keyframes mascot-fist { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 18%{transform:translateY(-10px) rotate(-4deg) scale(1.06)} 38%{transform:translateY(2px) rotate(3deg) scale(.99)} 58%{transform:translateY(-6px) rotate(-2deg) scale(1.03)} 78%{transform:translateY(1px) rotate(1deg) scale(1)} }
 @keyframes mascot-sad { 0%,100%{transform:translateY(0) scaleY(1)} 35%{transform:translateY(8px) scaleY(.94)} 68%{transform:translateY(4px) scaleY(.98)} }
 @keyframes mascot-pleading { 0%,100%{transform:translateY(0) scale(1)} 38%{transform:translateY(-12px) scale(1.08)} 65%{transform:translateY(2px) scale(.98)} 82%{transform:translateY(-4px) scale(1.02)} }
 @keyframes mascot-original { 0%,100%{transform:rotate(0) scale(1)} 16%{transform:rotate(-8deg) scale(1.05)} 34%{transform:rotate(7deg) scale(1.04)} 52%{transform:rotate(-5deg) scale(1.03)} 70%{transform:rotate(4deg) scale(1.02)} 86%{transform:rotate(-2deg) scale(1.01)} }
 @keyframes mascot-tears { 0%{opacity:0;transform:translate(-48%,-18px)} 35%{opacity:1} 100%{opacity:0;transform:translate(-48%,20px)} }
 @keyframes mascot-sparkle { 0%,100%{opacity:0;transform:scale(.7) rotate(-8deg)} 45%{opacity:1;transform:scale(1.15) rotate(4deg)} }
-@keyframes mascot-fist-spark { 0%{opacity:0;transform:scale(.35) rotate(-35deg)} 35%{opacity:1;transform:scale(1.25) rotate(12deg)} 75%{opacity:1;transform:scale(1) rotate(0)} 100%{opacity:0;transform:scale(.8) rotate(15deg)} }
 @media (max-width: 1000px) { .home-mascot { width: 116px; height: 116px; flex-basis: 116px; } }
 @media (max-width: 640px) { .sidebar .brand { width: auto; justify-content: flex-start; margin: 0; } .home-mascot { width: 88px; height: 88px; flex-basis: 88px; margin: 0; } }
 @media (prefers-reduced-motion: reduce) { .home-mascot.is-playing { animation: mascot-reduced 350ms ease-out!important; } .home-mascot-effect { display:none; } @keyframes mascot-reduced { 50%{transform:scale(1.04)} } }

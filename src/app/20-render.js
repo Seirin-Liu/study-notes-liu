@@ -1,7 +1,7 @@
 // 题库列表、学科导航与首页概览的 HTML 生成。
-  function renderNav(){document.body.classList.toggle('subject-selected',!!selectedSubject);document.body.classList.toggle('overview-mode',!selectedSubject);{const t=$('page-title');if(t)t.textContent=selectedSubject?subject(selectedSubject).name+'错题':'错题本';const ti=$('page-title-icon');if(ti)ti.innerHTML=selectedSubject?icon(subject(selectedSubject).icon):'';}const reviewNav=$('review-nav');const counts=s=>state.questions.filter(q=>!s||q.subject===s).length;$('subject-nav').innerHTML=`<button class="nav-item ${selectedSubject?'':'active'}" data-subject=""><span>${icon('book')}题库总览</span><small>${counts('')}</small></button>`+subjects.map(s=>`<button class="nav-item ${selectedSubject===s.id?'active':''}" data-subject="${s.id}"><span>${icon(s.icon)}${s.name}</span><small>${counts(s.id)}</small></button>`).join('');$('subject-nav').append(reviewNav);}
+  function renderNav(){document.body.classList.toggle('subject-selected',!!selectedSubject);document.body.classList.toggle('overview-mode',!selectedSubject);{const t=$('page-title');if(t)t.textContent=selectedSubject?subject(selectedSubject).name+'错题':'';const ti=$('page-title-icon');if(ti)ti.innerHTML=selectedSubject?icon(subject(selectedSubject).icon):'';}const reviewNav=$('review-nav');const counts=s=>state.questions.filter(q=>!s||q.subject===s).length;$('subject-nav').innerHTML=`<button class="nav-item ${selectedSubject?'':'active'}" data-subject=""><span>${icon('book')}题库总览</span><small>${counts('')}</small></button>`+subjects.map(s=>`<button class="nav-item ${selectedSubject===s.id?'active':''}" data-subject="${s.id}"><span>${icon(s.icon)}${s.name}</span><small>${counts(s.id)}</small></button>`).join('');$('subject-nav').append(reviewNav);}
   function renderTopics(){const topics=selectedSubject?subject(selectedSubject).topics:subjects.flatMap(s=>s.topics);topicFilters=new Set([...topicFilters].filter(t=>topics.includes(t)));const options=$('topic-options-filter');options.classList.remove('expanded');options.innerHTML=topics.length?topics.map(t=>`<label class="topic-option"><input type="checkbox" value="${esc(t)}" ${topicFilters.has(t)?'checked':''}><span>${esc(t)}</span></label>`).join(''):'<span class="no-topics">暂无题目类别</span>';const hasMore=options.scrollHeight>options.clientHeight+1;options.classList.toggle('expanded',topicsExpanded);const toggle=$('topic-expand');toggle.hidden=!hasMore;toggle.textContent=topicsExpanded?'收起类别':'展开全部类别';toggle.setAttribute('aria-expanded',String(topicsExpanded));$('topic-summary').textContent=topicFilters.size?`已选 ${topicFilters.size} 类`:'全部类别';}
-  function dailyUploadChart(){const days=Array.from({length:30},(_,i)=>{const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()-(29-i));return {key:localDate(date),count:0};});const counts=new Map(days.map(day=>[day.key,day]));for(const q of state.questions){const day=counts.get(localDate(q.createdAt));if(day)day.count++;}const max=Math.max(1,...days.map(day=>day.count));const total=days.reduce((sum,day)=>sum+day.count,0);return `<section class="daily-chart" aria-label="近 30 天每日上传错题数量"><div class="chart-heading"><div><h3>每日上传</h3><p>近 30 天 · 按首次录入日期统计</p></div><span>${total} 道新题</span></div><div class="daily-bars" role="img" aria-label="${days.map(day=>`${day.key}：${day.count} 道`).join('；')}">${days.map((day,i)=>`<div class="daily-day" title="${day.key} · ${day.count} 道"><div class="daily-bar-track"><span class="daily-bar ${day.count?'has-data':''}" style="height:${day.count?Math.max(8,Math.round(day.count/max*100)):3}%"></span></div><span class="daily-tick">${i===0||i===9||i===19||i===29?esc(day.key.slice(5)):''}</span></div>`).join('')}</div></section>`;}
+  function dailyUploadChart(){const days=Array.from({length:30},(_,i)=>{const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()-(29-i));return {key:localDate(date),count:0};});const counts=new Map(days.map(day=>[day.key,day]));for(const q of state.questions){const day=counts.get(localDate(q.createdAt));if(day)day.count++;}const max=Math.max(1,...days.map(day=>day.count));const total=days.reduce((sum,day)=>sum+day.count,0);return `<section class="daily-chart" aria-label="近 30 天每日上传错题数量"><div class="chart-heading"><div><h3>每日上传</h3><p>近 30 天 · 按首次录入日期统计</p></div><span>${total} 道新题</span></div><div class="daily-bars" data-overview-plot role="img" aria-label="${days.map(day=>`${day.key}：${day.count} 道`).join('；')}">${days.map((day,i)=>`<div class="daily-day" data-chart-hint="${day.key} · ${day.count} 道"><div class="daily-bar-track"><span class="daily-bar ${day.count?'has-data':''}" style="height:${day.count?Math.max(8,Math.round(day.count/max*100)):3}%"></span></div><span class="daily-tick">${i===0||i===9||i===19||i===29?esc(day.key.slice(5)):''}</span></div>`).join('')}<span class="overview-chart-tooltip" aria-hidden="true" hidden></span></div></section>`;}
   // Two different situations, two different messages: a subject that holds no
   // questions at all needs an entry point, not advice about filters.
   function hasActiveFilter(){
@@ -23,19 +23,67 @@
     const pageNumber=Math.min(page,pageCount);
     return {pageNumber,pageCount,pageItems:items.slice((pageNumber-1)*pageSize,pageNumber*pageSize)};
   }
+  function subjectPieChart(counts){
+    const heading='<div class="chart-heading"><div><h3>按学科统计</h3><p>各学科错题数量与占比</p></div></div>';
+    const palette=['#4a89d4','#9ec5ed','#7392b7','#c0d9f0','#acc2d8','#627b99'];
+    const rows=subjects.map((subject,index)=>({
+      name:subject.name,count:counts.get(subject.id)||0,color:palette[index]
+    }));
+    const total=rows.reduce((sum,row)=>sum+row.count,0);
+    if(!total)return '<section class="category-chart">'+heading+'<p class="chart-empty">录入错题后会显示学科统计</p></section>';
+    let end=0;
+    const point=angle=>[50+50*Math.sin(angle),50-50*Math.cos(angle)].join(' ');
+    const slices=rows.filter(row=>row.count>0).map(row=>{
+      const start=end;
+      end+=row.count;
+      const label=esc(row.name+' · '+row.count+' 道 · '+(100*row.count/total).toFixed(1)+'%');
+      const hint=`data-chart-hint="${label}"`;
+      if(row.count===total)return `<circle cx="50" cy="50" r="50" fill="${row.color}" ${hint}/>`;
+      const path=`M 50 50 L ${point(2*Math.PI*start/total)} A 50 50 0 ${row.count>total/2?1:0} 1 ${point(2*Math.PI*end/total)} Z`;
+      return `<path d="${path}" fill="${row.color}" ${hint}/>`;
+    }).join('');
+    const legend=rows.map(row=>`<li><i aria-hidden="true" style="background:${row.color}"></i><span>${esc(row.name)}</span><b>${row.count} 道</b><span class="subject-pie-percent">${(100*row.count/total).toFixed(1)}%</span></li>`).join('');
+    return `<section class="category-chart">${heading}<div class="subject-pie-plot" data-overview-plot><svg class="subject-pie" viewBox="0 0 100 100" aria-hidden="true">${slices}</svg><span class="overview-chart-tooltip" aria-hidden="true" hidden></span></div><ul class="subject-pie-legend">${legend}</ul></section>`;
+  }
+  function updateOverviewChartTooltip(event){
+    const target=event.type==='pointermove'?event.target.closest('[data-chart-hint]'):null;
+    const activePlot=target?.closest('[data-overview-plot]');
+    for(const plot of event.currentTarget.querySelectorAll('[data-overview-plot]')){
+      const tooltip=plot.querySelector('.overview-chart-tooltip');
+      tooltip.hidden=plot!==activePlot;
+      if(plot!==activePlot)continue;
+      const hint=target.dataset.chartHint;
+      if(tooltip.textContent!==hint)tooltip.textContent=hint;
+      const gap=12, edge=8;
+      const bounds=plot.getBoundingClientRect();
+      const width=tooltip.offsetWidth, height=tooltip.offsetHeight;
+      const viewportWidth=document.documentElement.clientWidth;
+      const viewportHeight=document.documentElement.clientHeight;
+      const left=Math.max(edge,Math.min(event.clientX+gap,viewportWidth-width-edge));
+      const below=event.clientY+gap;
+      const top=below+height<=viewportHeight-edge?below:Math.max(edge,event.clientY-gap-height);
+      tooltip.style.left=(left-bounds.left-plot.clientLeft)+'px';
+      tooltip.style.top=(top-bounds.top-plot.clientTop)+'px';
+    }
+  }
+  $('overview').addEventListener('pointermove',updateOverviewChartTooltip);
+  $('overview').addEventListener('pointerleave',updateOverviewChartTooltip);
   function renderOverview(){
     const overview=$('overview');
     overview.hidden=!!selectedSubject;
     if(selectedSubject)return;
     const topicCounts=new Map();
-    for(const q of state.questions){const key=q.subject+'|'+q.topic;const item=topicCounts.get(key)||{subject:q.subject,topic:q.topic,count:0};item.count++;topicCounts.set(key,item);}
+    const wrongBySubject=new Map();
+    for(const q of state.questions){if(q.kind!=='note')wrongBySubject.set(q.subject,(wrongBySubject.get(q.subject)||0)+1);const key=q.subject+'|'+q.topic;const item=topicCounts.get(key)||{subject:q.subject,topic:q.topic,count:0};item.count++;topicCounts.set(key,item);}
     const topics=[...topicCounts.values()].sort((a,b)=>b.count-a.count||a.topic.localeCompare(b.topic,'zh-CN')).slice(0,8);
     const maxTopic=topics[0]?.count||1;
-    overview.innerHTML=`${dailyUploadChart()}<section class="category-chart"><div class="chart-heading"><div><h3>错题类别</h3><p>按专题统计题目数量</p></div><span>${topicCounts.size} 个类别</span></div>${topics.length?`<div class="chart-rows">${topics.map(x=>`<div class="chart-row"><span class="chart-subject">${subject(x.subject).name}</span><span class="chart-topic" title="${esc(x.topic)}">${esc(x.topic)}</span><span class="chart-track"><i style="width:${Math.max(8,Math.round(x.count/maxTopic*100))}%"></i></span><b>${x.count}</b></div>`).join('')}</div>`:'<p class="chart-empty">录入题目后会显示类别统计</p>'}</section><div class="overview-grid">${subjects.map(s=>`<button data-subject="${s.id}" class="overview-card"><span>${icon(s.icon)} ${s.name}</span><strong>${state.questions.filter(q=>q.subject===s.id).length}</strong><small>查看题目 →</small></button>`).join('')}</div>`;
+    overview.innerHTML=`${dailyUploadChart()}<div class="overview-breakdown"><section class="category-chart"><div class="chart-heading"><div><h3>错题类别</h3><p>按专题统计题目数量</p></div><span>${topicCounts.size} 个类别</span></div>${topics.length?`<div class="chart-rows">${topics.map(x=>`<div class="chart-row"><span class="chart-subject">${subject(x.subject).name}</span><span class="chart-topic" title="${esc(x.topic)}">${esc(x.topic)}</span><span class="chart-track"><i style="width:${Math.max(8,Math.round(x.count/maxTopic*100))}%"></i></span><b>${x.count}</b></div>`).join('')}</div>`:'<p class="chart-empty">录入题目后会显示类别统计</p>'}</section>${subjectPieChart(wrongBySubject)}</div><div class="overview-grid">${subjects.map(s=>`<button data-subject="${s.id}" class="overview-card"><span>${icon(s.icon)} ${s.name}</span><strong>${state.questions.filter(q=>q.subject===s.id).length}</strong><small>查看题目 →</small></button>`).join('')}</div>`;
   }
   function questionCardHTML(q,order){
     const s=subject(q.subject),selected=order>0;
-    return `<article class="question-card ${selected?'selected':''}"><div class="card-top"><label class="question-select"><input type="checkbox" data-select-id="${esc(q.id)}" aria-label="选择题目：${esc(q.topic)}" ${selected?'checked':''}><span>本次打印</span>${order?`<em class="selection-order">第 ${order} 题</em>`:``}</label><div class="tags"><span class="tag subject" style="${style(s)}">${s.name}</span><span class="tag entry-kind-tag">${q.kind==='note'?'笔记':'错题'}</span><span class="topic-tag" title="${esc(q.topic)}">${esc(q.topic)}</span></div><span class="card-status ${q.mastered?'mastered':''}">${q.mastered?'✓ 已掌握':'○ 待复习'}</span></div><div class="question-text">${richQuestion(q)}</div>${q.answer?`<div class="card-answer"><b>答案</b>${richQuestion(q,'answer')}</div>`:''}<div class="card-bottom"><small>${q.demo?'示例题 · ':''}上传于 ${q.createdAt?new Date(q.createdAt).toLocaleDateString('zh-CN'):''}</small><div class="card-actions"><button type="button" class="review-toggle" data-action="toggle-solution" data-id="${esc(q.id)}" aria-expanded="false" aria-controls="solution-${esc(q.id)}" title="展开或收起解析">${icon('book')}<span>解析</span><i class="chevron" aria-hidden="true"></i></button><label class="mastery-switch" title="点一下切换已掌握"><input type="checkbox" role="switch" class="mastery-toggle" data-mastery-id="${esc(q.id)}" aria-label="${esc(q.topic)}：已掌握" ${q.mastered?'checked':''}><span class="mastery-track" aria-hidden="true"></span><span class="mastery-label">${q.mastered?'已掌握':'待复习'}</span></label><button data-action="edit" data-id="${esc(q.id)}">${icon('edit')}编辑</button><button data-action="delete" data-id="${esc(q.id)}" class="delete" aria-label="删除题目">${icon('trash')}</button></div></div><div class="card-solution" id="solution-${esc(q.id)}" hidden><div class="solution-body">${solutionHTML(q)}</div></div></article>`;
+    const answerId='list-answer-'+esc(q.id);
+    const answerToggle=q.answer?`<button type="button" class="card-answer-toggle" aria-label="查看本题答案" aria-expanded="false" aria-controls="${answerId}">${icon('eye')}</button>`:'';
+    return `<article class="question-card ${selected?'selected':''}"><div class="card-top"><label class="question-select"><input type="checkbox" data-select-id="${esc(q.id)}" aria-label="选择题目：${esc(q.topic)}" ${selected?'checked':''}><span>本次打印</span>${order?`<em class="selection-order">第 ${order} 题</em>`:``}</label><div class="tags"><span class="tag subject" style="${style(s)}">${s.name}</span><span class="tag entry-kind-tag">${q.kind==='note'?'笔记':'错题'}</span>${NoteSchema.questionSource(q)?`<span class="tag entry-kind-tag">${esc(NoteSchema.questionSource(q))}</span>`: ''}<span class="topic-tag" title="${esc(q.topic)}">${esc(q.topic)}</span></div><span class="card-status ${q.mastered?'mastered':''}">${q.mastered?'✓ 已掌握':'○ 待复习'}</span></div><div class="question-text">${richQuestion(q)}</div>${q.answer?`<div class="card-answer" id="${answerId}" tabindex="0"><b>答案</b><span class="card-answer-content">${richQuestion(q,'answer')}</span><span class="card-answer-placeholder">移到此处查看</span></div>`:''}<div class="card-bottom"><small>${q.demo?'示例题 · ':''}上传于 ${q.createdAt?new Date(q.createdAt).toLocaleDateString('zh-CN'):''}</small><div class="card-actions">${answerToggle}<button type="button" class="review-toggle" data-action="toggle-solution" data-id="${esc(q.id)}" aria-expanded="false" aria-controls="solution-${esc(q.id)}" title="展开或收起解析">${icon('book')}<span>解析</span><i class="chevron" aria-hidden="true"></i></button><label class="mastery-switch" title="点一下切换已掌握"><input type="checkbox" role="switch" class="mastery-toggle" data-mastery-id="${esc(q.id)}" aria-label="${esc(q.topic)}：已掌握" ${q.mastered?'checked':''}><span class="mastery-track" aria-hidden="true"></span><span class="mastery-label">${q.mastered?'已掌握':'待复习'}</span></label><button data-action="edit" data-id="${esc(q.id)}">${icon('edit')}编辑</button><button data-action="delete" data-id="${esc(q.id)}" class="delete" aria-label="删除题目">${icon('trash')}</button></div></div><div class="card-solution" id="solution-${esc(q.id)}" hidden><div class="solution-body">${solutionHTML(q)}</div></div></article>`;
   }
   function renderQuestionPage(pageItems){
     const list=$('question-list');
@@ -68,13 +116,14 @@
     const value=Number(new URL(location.href).searchParams.get('page'));
     return Number.isFinite(value)&&value>0?Math.floor(value):1;
   }
-  function renderList(){
+  let currentFilteredItems=[];
+  function renderList(items=filtered()){
+    currentFilteredItems=items;
     for(const button of $('entry-kind-filter').querySelectorAll('[data-entry-kind]')){
       const active=button.dataset.entryKind===kindFilter;
       button.classList.toggle('active',active);
       button.setAttribute('aria-pressed',String(active));
     }
-    const items=filtered();
     const {pageNumber,pageCount,pageItems}=paginateQuestions(items,currentPage);
     currentPage=pageNumber;
     $('collection-title').textContent=selectedSubject?'题目筛选':'题库概况 · '+state.questions.length+' 条记录';
@@ -82,7 +131,7 @@
     renderOverview();
     renderQuestionPage(pageItems);
     renderQuestionPagination(pageCount,items.length);
-    renderSelection();
+    renderSelection(items);
     schedulePreview();
   }
-  $('question-pagination').onclick=e=>{const button=e.target.closest('[data-page]');if(!button||button.disabled)return;currentPage=Number(button.dataset.page);syncPageInURL();renderList();if(mobileLayout.matches)$('question-list').scrollIntoView({block:'start'});};
+  $('question-pagination').onclick=e=>{const button=e.target.closest('[data-page]');if(!button||button.disabled)return;currentPage=Number(button.dataset.page);syncPageInURL();renderList(currentFilteredItems);if(mobileLayout.matches)$('question-list').scrollIntoView({block:'start'});};

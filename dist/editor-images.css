@@ -9,9 +9,6 @@
 .image-text-editor:focus { outline: none; border-color: #8eafe0; }
 .image-text-editor:empty::before { content: attr(data-placeholder); color: #8a9099; pointer-events: none; }
 .image-text-editor.single-line { min-height: 48px; }
-.image-insert-field { position: relative; min-width: 0; }
-.image-insert-field > label { display: block; font-size: 14px; }
-.image-insert-field > .field-insert-image { position: absolute; top: 0; right: 0; padding: 0 7px; line-height: 18px; font-size: 12px; }
 #rich-question, #rich-explanation { min-height: 150px; }
 .editor-image-token {
   display: inline-flex; align-items: center; gap: 7px; vertical-align: baseline;
@@ -23,9 +20,25 @@
 .editor-image-token:hover { background: #dfeeff; border-color: #9cbde7; }
 .editor-image-token:focus-visible { outline: 2px solid #8eafe0; outline-offset: 2px; }
 #question-form .formula-tools { gap: 8px; margin: 4px 0 18px; color: #727982; }
+.editor-field-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+#question-form .editor-field-heading > label {
+  flex: none;
+  margin: 0;
+  font-weight: 700;
+}
+#question-form .editor-field-heading .formula-tools {
+  min-width: 0;
+  flex-wrap: wrap;
+  margin: 0;
+}
 #question-form .formula-tools button { padding: 7px 11px; font-size: 13px; border-radius: 6px; }
 #question-form #insert-image { color: #2364aa; border-color: #c4d9f5; background: #eff6ff; }
-#question-form .editor-images { margin: -4px 0 18px; padding: 16px 18px; border-color: #e0e3e8; border-radius: 12px; background: #f7f8fa; }
+#question-form .editor-images { margin: 16px 0 18px; padding: 16px 18px; border-color: #e0e3e8; border-radius: 12px; background: #f7f8fa; }
 .editor-images-heading, .editor-images-heading > div { display: flex; align-items: center; gap: 10px; }
 .editor-images-heading { justify-content: space-between; }
 .editor-images-heading h3 { margin: 0; font-size: 16px; color: #252a32; }
@@ -96,3 +109,8 @@ dialog.editor-image-dialog::backdrop { background: #1d253b55; }
   .image-text-editor { font-size: 16px; }
   .image-process-layout { grid-template-columns: minmax(0,1fr); }
 }
+
+[data-text-color="black"], .text-color-black { color: #17191d !important; }
+[data-text-color="red"], .text-color-red { color: #b42318 !important; }
+[data-text-color="blue"], .text-color-blue { color: #174ea6 !important; }
+@media print { .text-color-red, .text-color-blue { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }

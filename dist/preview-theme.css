@@ -125,7 +125,8 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 .editor-panel .form-grid select:focus,.editor-panel .form-grid select:focus-visible{outline:none;box-shadow:0 0 0 2px #8ba7c733;border-color:#8ba7c7;}
 
 /* Keep the overview focused on its statistics. */
-.overview-mode:not(.editing-mode) .page-heading{display:none;}
+.overview-mode:not(.editing-mode) .page-heading,
+.overview-mode .collection-header{display:none;}
 .overview-mode .overview-card{background:#f3f4f6;border-color:#e5e7eb;}
 .overview-mode .overview-card:hover{background:#eceef1;border-color:#cbd0d7;}
 
@@ -156,20 +157,6 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 .preview-stage { position: relative; }
 #preview-canvas .paper-page { cursor: zoom-in; }
 #preview-canvas .paper-page [data-image] { cursor: zoom-in; }
-#preview-canvas:empty + #preview-btn { display: none; }
-#preview-btn {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  min-height: 36px;
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  background: #fff;
-  color: #343541;
-  font-size: 13px;
-}
-#preview-btn:hover { background: #f3f4f6; }
 
 .pdf-preview-dialog {
   width: min(850px, calc(100vw - 24px));
@@ -207,9 +194,6 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
 .pdf-preview-sheet { margin: 0 auto; overflow: hidden; box-shadow: 0 2px 8px #0000001a; }
 .pdf-preview-sheet > .paper-page { transform-origin: top left; }
 
-@media screen and (max-width: 640px) {
-  #preview-btn { min-height: 44px; }
-}
 
 @media print {
   html, body {

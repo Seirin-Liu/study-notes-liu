@@ -85,15 +85,15 @@
   }
   function syncRichInput(field,editor){
     if(!field||!editor)return;
-    field.value=editor.innerText;
-    field.dispatchEvent(new Event('input',{bubbles:true}));
+    editor.dispatchEvent(new Event('input',{bubbles:true}));
   }
-  function applyMark(kind){
+  function applyMark(kind,targetField){
     const marks={bold:['**','**'],underline:['__','__']};
     const [open,close]=marks[kind]||['',''];
     const name=kind==='bold'?'加粗':'下划线';
-    const field=lastFocusedField();
+    const field=targetField?$('f-'+targetField):lastFocusedField();
     if(!field)return;
+    if(targetField)editorImages.focusField(targetField);
     const editor=richEditorFor(field);
     const range=richRangeIn(editor);
     if(editor&&range){
@@ -110,6 +110,14 @@
   }
   for(const button of document.querySelectorAll('[data-wrap]')){
     button.addEventListener('mousedown',e=>e.preventDefault());
-    button.onclick=()=>applyMark(button.dataset.wrap);
+    button.onclick=()=>applyMark(button.dataset.wrap,button.closest('[data-tool-field]')?.dataset.toolField);
   }
   document.addEventListener('focusin',e=>{if(e.target.id&&e.target.id.startsWith('f-'))lastField=e.target;});
+
+  for(const button of document.querySelectorAll('[data-text-color]')){
+    button.addEventListener('mousedown',e=>e.preventDefault());
+    button.onclick=()=>{
+      const field=button.closest('[data-tool-field]').dataset.toolField;
+      if(!editorImages.colorSelection(field,button.dataset.textColor))toast('请先在对应输入框选中文字');
+    };
+  }

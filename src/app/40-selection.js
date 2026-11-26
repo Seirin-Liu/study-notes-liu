@@ -34,7 +34,42 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
   $('date-menu-button').onclick=()=>{const menu=$('date-menu');if(!menu.hidden){closeDateMenu();return;}syncDateMenu();const rect=$('date-menu-button').getBoundingClientRect();menu.style.left=Math.max(8,Math.min(rect.left,innerWidth-216))+'px';menu.style.top=Math.max(8,Math.min(rect.bottom+6,innerHeight-352))+'px';menu.hidden=false;$('date-menu-button').setAttribute('aria-expanded','true');};
   $('date-menu').onclick=e=>{const option=e.target.closest('[data-date]');if(!option)return;$('date-preset').value=option.dataset.date;syncDateMenu();closeDateMenu();applyDatePreset();};
   document.addEventListener('click',e=>{if(!e.target.closest('#date-menu,#date-menu-button'))closeDateMenu();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDateMenu();});
-  $('question-list').onchange=async e=>{const masteryId=e.target.dataset.masteryId;if(masteryId){const q=state.questions.find(q=>q.id===masteryId);if(!q)return;const mastered=e.target.checked;e.target.disabled=true;const ok=await commitMastery([masteryId],mastered);if(!ok){e.target.checked=!mastered;renderAll();return;}renderAll();toast(mastered?'已标记为已掌握':'已改回待复习');return;}const id=e.target.dataset.selectId;if(!id)return;e.target.checked?selectedIds.add(id):selectedIds.delete(id);{const label=e.target.closest('.question-select');if(label){label.querySelector('.selection-order')?.remove();const order=selectedIds.has(id)?Array.from(selectedIds).indexOf(id)+1:0;if(order){const em=document.createElement('em');em.className='selection-order';em.textContent='第 '+order+' 题';label.append(em);}}e.target.closest('.question-card')?.classList.toggle('selected',selectedIds.has(id));}renderSelection();updatePreview();};
-  async function markSelected(mastered){if(!selectedIds.size){toast('请先勾选要标记的题目。');return;}const ids=[...selectedIds].filter(id=>state.questions.some(q=>q.id===id));const targets=ids.filter(id=>{const q=state.questions.find(x=>x.id===id);return !!q.mastered!==mastered;});if(!targets.length){toast(`已勾选的 ${ids.length} 道题已经是${mastered?'已掌握':'待复习'}状态`);return;}if(await commitMastery(targets,mastered)){renderAll();toast(`已将 ${targets.length} 道题标为${mastered?'已掌握':'待复习'}`+(ids.length>targets.length?`，其余 ${ids.length-targets.length} 道原本就是该状态。`:'。'));}}$('mark-mastered').onclick=()=>markSelected(true);$('mark-review').onclick=()=>markSelected(false);$('select-visible').onclick=()=>{filtered().forEach(q=>selectedIds.add(q.id));renderList();};$('clear-selection').onclick=()=>{selectedIds.clear();renderList();};
+  const listAnswersPreference='zhixu-show-list-answers';
+  const listAnswerToggle=$('list-answer-toggle');
+
+  function setListAnswersVisible(visible){
+    const list=$('question-list');
+    list.classList.toggle('list-answers-hidden',!visible);
+    listAnswerToggle.setAttribute('aria-pressed',String(visible));
+    listAnswerToggle.title=visible?'隐藏列表答案':'显示列表答案';
+    listAnswerToggle.innerHTML=icon(visible?'eye':'eye-off')+'<span>答案</span>';
+    if(visible){
+      for(const button of list.querySelectorAll('.card-answer-toggle[aria-expanded="true"]')){
+        button.setAttribute('aria-expanded','false');
+        button.setAttribute('aria-label','查看本题答案');
+      }
+    }
+  }
+
+  let listAnswersVisible=true;
+  try{listAnswersVisible=localStorage.getItem(listAnswersPreference)!=='false';}catch{}
+  setListAnswersVisible(listAnswersVisible);
+
+  listAnswerToggle.onclick=()=>{
+    listAnswersVisible=!listAnswersVisible;
+    setListAnswersVisible(listAnswersVisible);
+    try{localStorage.setItem(listAnswersPreference,String(listAnswersVisible));}catch{}
+  };
+
+  $('question-list').addEventListener('click',event=>{
+    const button=event.target.closest('.card-answer-toggle');
+    if(!button)return;
+    const show=button.getAttribute('aria-expanded')!=='true';
+    button.setAttribute('aria-expanded',String(show));
+    button.setAttribute('aria-label',show?'隐藏本题答案':'查看本题答案');
+  });
+
+  $('question-list').onchange=async e=>{const masteryId=e.target.dataset.masteryId;if(masteryId){const q=state.questions.find(q=>q.id===masteryId);if(!q)return;const mastered=e.target.checked;e.target.disabled=true;const ok=await commitMastery([masteryId],mastered);if(!ok){e.target.checked=!mastered;renderAll();return;}renderAll();toast(mastered?'已标记为已掌握':'已改回待复习');return;}const id=e.target.dataset.selectId;if(!id)return;e.target.checked?selectedIds.add(id):selectedIds.delete(id);{const label=e.target.closest('.question-select');if(label){label.querySelector('.selection-order')?.remove();const order=selectedIds.has(id)?Array.from(selectedIds).indexOf(id)+1:0;if(order){const em=document.createElement('em');em.className='selection-order';em.textContent='第 '+order+' 题';label.append(em);}}e.target.closest('.question-card')?.classList.toggle('selected',selectedIds.has(id));}renderSelection(currentFilteredItems);updatePreview();};
+  async function markSelected(mastered){if(!selectedIds.size){toast('请先勾选要标记的题目。');return;}const ids=[...selectedIds].filter(id=>state.questions.some(q=>q.id===id));const targets=ids.filter(id=>{const q=state.questions.find(x=>x.id===id);return !!q.mastered!==mastered;});if(!targets.length){toast(`已勾选的 ${ids.length} 道题已经是${mastered?'已掌握':'待复习'}状态`);return;}if(await commitMastery(targets,mastered)){renderAll();toast(`已将 ${targets.length} 道题标为${mastered?'已掌握':'待复习'}`+(ids.length>targets.length?`，其余 ${ids.length-targets.length} 道原本就是该状态。`:'。'));}}$('mark-mastered').onclick=()=>markSelected(true);$('mark-review').onclick=()=>markSelected(false);$('select-visible').onclick=()=>{currentFilteredItems.forEach(q=>selectedIds.add(q.id));renderList(currentFilteredItems);};$('clear-selection').onclick=()=>{selectedIds.clear();renderList(currentFilteredItems);};
   function resetFilters(){query='';kindFilter='';topicFilters.clear();topicsExpanded=false;statusFilter='';dateFrom=dateTo='';todayMode=false;$('date-preset').value='week';applyDatePreset();syncDateMenu();closeDateMenu();$('custom-dates').hidden=true;$('search-input').value='';$('status-filter').value='';syncStatusMenu();closeStatusMenu();$('date-from').value=$('date-to').value='';renderAll();}
   $('reset-filter').onclick=()=>resetFilters();

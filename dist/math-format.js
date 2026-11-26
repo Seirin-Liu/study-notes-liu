@@ -27,12 +27,33 @@
       .replace(/\*\*(?=[^\s*])([\s\S]*?[^\s*])\*\*/g,'<strong>$1</strong>')
       .replace(/__(?=[^\s_])([\s\S]*?[^\s_])__/g,'<u>$1</u>');
   }
+  // Match paired color tags before escaping text. Only the three toolbar colors are accepted.
+  function colorText(source, renderText, editable=false){
+    const pattern=/\[(\/?)(black|red|blue)\]/g;
+    const stack=[], pairs=new Map();
+    for(const match of source.matchAll(pattern)){
+      const [tag,closing,color]=match;
+      if(!closing) stack.push(match);
+      else if(stack.at(-1)?.[2]===color){
+        const open=stack.pop();
+        pairs.set(open.index,{tag:open[0],html:'<span class="text-color-'+color+'"'+(editable?' data-saved-color="'+color+'"':'')+'>'});
+        pairs.set(match.index,{tag,html:'</span>'});
+      }
+    }
+    let offset=0, html='';
+    for(const index of [...pairs.keys()].sort((a,b)=>a-b)){
+      const {tag,html:markup}=pairs.get(index);
+      html+=renderText(source.slice(offset,index))+markup;
+      offset=index+tag.length;
+    }
+    return html+renderText(source.slice(offset));
+  }
   function renderToken(t){
     if(t.type==='text')return emphasize(escape(t.value));
     try{if(t.error)throw Error(t.error);if(!katex)throw Error('公式组件未加载');const html=katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20,output:'htmlAndMathml'});return `<span class="formula-atom ${t.display?'formula-display':''}" data-tex="${escape(t.value)}">${html}</span>`;}
     catch(e){return `<span class="formula-error" title="${escape(e.message)}">公式待修正：${escape(t.value)}</span>`;}
   }
-  function render(source,options={}){return tokenize(source,options.equation).map(renderToken).join('');}
+  function render(source,options={}){const renderSource=text=>tokenize(text,options.equation).map(renderToken).join('');return options.equation?renderSource(source):colorText(String(source??''),renderSource);}
   function check(source,options={}){const errors=[];for(const t of tokenize(source,options.equation)){if(t.type==='text')continue;try{if(t.error)throw Error(t.error);katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20});}catch(e){errors.push(e.message.replace(/^KaTeX parse error: /,''));}}return errors;}
-  return {render,check,tokenize,escape,emphasize,normalizeDelimiters};
+  return {render,check,colorText,tokenize,escape,emphasize,normalizeDelimiters};
 });
