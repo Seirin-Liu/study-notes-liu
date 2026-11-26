@@ -118,6 +118,6 @@
     button.addEventListener('mousedown',e=>e.preventDefault());
     button.onclick=()=>{
       const field=button.closest('[data-tool-field]').dataset.toolField;
-      if(!editorImages.colorSelection(field,button.dataset.textColor))toast('请先在对应输入框选中文字');
+      if(!editorImages.colorSelection(field,button.dataset.textColor))toast('请选择文字或完整公式后再设置颜色');
     };
   }

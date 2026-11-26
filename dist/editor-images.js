@@ -223,6 +223,12 @@
       if (!range || range.collapsed || !entry.editor.contains(range.commonAncestorContainer)) return false;
       const selected = range.cloneContents();
       if (!selected.textContent.trim() || selected.querySelector('[data-image-token]')) return false;
+      const prefix = document.createRange();
+      prefix.selectNodeContents(entry.editor);
+      for (const [node, offset] of [[range.startContainer, range.startOffset], [range.endContainer, range.endOffset]]) {
+        prefix.setEnd(node, offset);
+        if (Formula.tokenize(plainText(prefix.cloneContents())).some(token => token.type === 'error')) return false;
+      }
       this.active = entry;
       const text = plainText(selected).replace(/\[\/?(?:black|red|blue)\]/g, '');
       this.insertText(`[${color}]${text}[/${color}]`);

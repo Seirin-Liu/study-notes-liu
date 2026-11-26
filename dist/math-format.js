@@ -54,6 +54,11 @@
     catch(e){return `<span class="formula-error" title="${escape(e.message)}">公式待修正：${escape(t.value)}</span>`;}
   }
   function render(source,options={}){const renderSource=text=>tokenize(text,options.equation).map(renderToken).join('');return options.equation?renderSource(source):colorText(String(source??''),renderSource);}
-  function check(source,options={}){const errors=[];for(const t of tokenize(source,options.equation)){if(t.type==='text')continue;try{if(t.error)throw Error(t.error);katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20});}catch(e){errors.push(e.message.replace(/^KaTeX parse error: /,''));}}return errors;}
+  function check(source,options={}){const errors=[];
+    if(!options.equation&&!options.colorSegment&&/\[\/?(?:black|red|blue)\]/.test(String(source??''))){
+      colorText(String(source??''),text=>{errors.push(...check(text,{colorSegment:true}));return '';});
+      return errors;
+    }
+    for(const t of tokenize(source,options.equation)){if(t.type==='text')continue;try{if(t.error)throw Error(t.error);katex.renderToString(t.value,{displayMode:!!t.display,throwOnError:true,trust:false,strict:'error',maxExpand:500,maxSize:20});}catch(e){errors.push(e.message.replace(/^KaTeX parse error: /,''));}}return errors;}
   return {render,check,colorText,tokenize,escape,emphasize,normalizeDelimiters};
 });
