@@ -1,5 +1,24 @@
 // 打印预览与保存设置的联动，以及富文本字段的定位工具。
-  async function updatePreview(){clearTimeout(previewTimer);try{await Printer.render(editing?[draft()]:selectedSubject?selectedQuestions():[],state.settings,editing?subject($('f-subject').value).name+'错题专题集':titleFor(),Object.fromEntries(subjects.map(s=>[s.id,s.name])));}catch(e){$('preview-meta').textContent='预览失败：'+e.message;$('print-btn').disabled=true;}}
+  let previewJob;
+  function updatePreview(force=false){
+    clearTimeout(previewTimer);
+    const items=editing?[draft()]:selectedSubject?selectedQuestions():[];
+    const title=editing?subject($('f-subject').value).name+'错题专题集':titleFor();
+    const key=JSON.stringify([title,state.settings,items.map(({id,subject,topic,question,answer,explanation,notes,equation,images})=>[
+      id,subject,topic,question,answer,explanation,notes,equation,images
+    ])]);
+    if(!force&&previewJob?.key===key)return previewJob.promise;
+
+    const job={key};
+    previewJob=job;
+    job.promise=Printer.render(items,state.settings,title,Object.fromEntries(subjects.map(s=>[s.id,s.name]))).catch(error=>{
+      if(previewJob!==job)return;
+      previewJob=null;
+      $('preview-meta').textContent='预览失败：'+error.message;
+      $('print-btn').disabled=true;
+    });
+    return job.promise;
+  }
   $('prev-page').onclick=()=>Printer.previous();$('next-page').onclick=()=>Printer.next();window.addEventListener('resize',Printer.scale);window.addEventListener('resize',()=>{if(selectedSubject)renderTopics();});$('print-btn').onclick=async()=>{await updatePreview();if(!$('print-btn').disabled)window.print();};
   const previewCanvas = $('preview-canvas');
   const previewDialog = $('pdf-preview-dialog');

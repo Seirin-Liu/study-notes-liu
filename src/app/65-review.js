@@ -23,7 +23,7 @@
   function reviewQuestionHTML(question,index){
     const hasSolution=['answer','explanation','equation','notes'].some(key=>question[key]);
     const solution=[['answer','答案'],['explanation','解析'],['equation','方程式'],['notes','备注']].filter(([key])=>question[key]).map(([key,label])=>`<div><b>${label}</b>${richQuestion(question,key)}</div>`).join('');
-    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(question.topic)}</h2><div class="question-text">${richQuestion(question)}</div>${hasSolution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
+    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(NoteSchema.topicName(question.subject,question.topic))}</h2><div class="question-text">${richQuestion(question)}</div>${hasSolution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
   }
   function initReview(){
     const selector=$('review-subject');

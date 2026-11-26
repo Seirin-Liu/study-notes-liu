@@ -3,7 +3,8 @@
     {motion:'original',file:'brand-dog.png',clickFile:'brand-dog-wave.png',name:'挥拳的比格多栋',src:'/brand-dog.png'},
     {motion:'smug',file:'beagle-smug.png',name:'得意的比格多栋'},
     {motion:'sad',file:'beagle-sad.png',name:'委屈的比格多栋'},
-    {motion:'pleading',file:'beagle-pleading.png',name:'撒娇的比格多栋'}
+    {motion:'pleading',file:'beagle-pleading.png',name:'撒娇的比格多栋'},
+    {motion:'crying',file:'beagle-crying.png',name:'爆哭的比格多栋'}
   ];
   function initHomeMascot(){
     const button=$('home-mascot'),image=$('home-mascot-image');

@@ -17,7 +17,8 @@
   let selectedSubject='',query='',topicFilters=new Set(),topicsExpanded=false,kindFilter='',statusFilter='',dateFrom='',dateTo='',todayMode=false,selectedIds=new Set(),currentPage=1,editing=false,editingId=null,previewTimer,toastTimer;
   const structuralIds={};for(const name of ['subject-nav','local-status','sync-error','page-title','page-title-icon','search-input','add-btn','collection-title','collection-count','overview','question-list','question-pagination','collection-panel','editor-panel','f-subject','f-topic','question-form','paper-size','compact-mode','show-answer','show-explanation','show-notes','single-column','double-column','preview-stage','preview-canvas','preview-empty','preview-meta','page-indicator','prev-page','next-page','print-btn','print-count','save-question-btn','status-filter','date-preset']){const el=$(name);if(!el)structuralIds[name]=false;else{if(!el.id)el.id=name;structuralIds[name]=true;}}
   const validQuestion=q=>NoteSchema.errors(q).length===0;
-  function formulaProblems(q){return ['question','answer','explanation','notes','equation'].flatMap(k=>Formula.check(q[k]||'',{equation:k==='equation'}).map(error=>({field:k,error})));}
+  const formulaFields=['question','answer','explanation','notes','equation'];
+  function formulaProblems(q,fields=formulaFields){return fields.flatMap(k=>Formula.check(q[k]||'',{equation:k==='equation'}).map(error=>({field:k,error})));}
   let librarySyncToken='';
   async function loadLocal(manual=false){
     if(polling||saving)return;
@@ -44,7 +45,38 @@
       if(manual)toast(error.message);
     }finally{polling=false;}
   }
-  async function commit(next,expectedRevision=revision,options={}){if(!ready||saving){toast('请等待本地题库连接或当前保存完成。');return false;}saving=true;try{const res=await fetch('/api/library',{method:options.mastery?'PATCH':'PUT',headers:{'Content-Type':'application/json','X-Zhixu-Local':'1','If-Match':expectedRevision},body:JSON.stringify(options.mastery?next:{version:2,questions:next.questions,settings:next.settings})});const data=await res.json();if(!res.ok)throw Error(data.error+(res.status===409&&editing?' 请保留草稿内容，取消编辑并重新打开后再保存。':''));if(options.mastery){const updates=new Map(data.updates.map(update=>[update.id,update]));state={...state,questions:state.questions.map(question=>updates.has(question.id)?{...question,...updates.get(question.id)}:question)};}else state={version:2,questions:data.questions,settings:data.settings};revision=data.revision;librarySyncToken='';$('local-status').textContent='已连接本地文件';return true;}catch(e){if(!options.silent)toast(e.message);if($('form-message'))$('form-message').textContent=e.message;return false;}finally{saving=false;}}
+  async function commit(next,expectedRevision=revision,options={}){
+    if(!ready||saving){toast('请等待本地题库连接或当前保存完成。');return false;}
+    saving=true;
+    try{
+      const partial=options.mastery||options.question||options.settings;
+      const res=await fetch('/api/library',{
+        method:partial?'PATCH':'PUT',
+        headers:{'Content-Type':'application/json','X-Zhixu-Local':'1','If-Match':expectedRevision},
+        body:JSON.stringify(partial?next:{version:2,questions:next.questions,settings:next.settings})
+      });
+      const data=await res.json();
+      if(!res.ok)throw Error(data.error+(res.status===409&&editing?' 请保留草稿内容，取消编辑并重新打开后再保存。':''));
+      if(options.mastery){
+        const updates=new Map(data.updates.map(update=>[update.id,update]));
+        state={...state,questions:state.questions.map(question=>updates.has(question.id)?{...question,...updates.get(question.id)}:question)};
+      }else if(options.question){
+        state={...state,questions:state.questions.map(question=>question.id===data.question.id?data.question:question)};
+      }else if(options.settings){
+        state={...state,settings:data.settings};
+      }else{
+        state={version:2,questions:data.questions,settings:data.settings};
+      }
+      revision=data.revision;
+      librarySyncToken='';
+      $('local-status').textContent='已连接本地文件';
+      return true;
+    }catch(e){
+      if(!options.silent)toast(e.message);
+      if($('form-message'))$('form-message').textContent=e.message;
+      return false;
+    }finally{saving=false;}
+  }
   function commitMastery(ids,mastered){return commit({ids,mastered},revision,{mastery:true});}
   function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4200);}
   const style=s=>`--subject-color:${s.color};--subject-bg:${s.bg}`;
@@ -57,7 +89,7 @@
       const target=exact[1].replace(/\s+/g,'');
       return number===target||(/^\d+$/.test(target)&&number.match(/^\d+/)?.[0]===target);
     }
-    return !keyword||[q.question,q.answer,q.explanation,q.notes,q.topic,q.equation,NoteSchema.questionSource(q),number].some(
+    return !keyword||[q.question,q.answer,q.explanation,q.notes,NoteSchema.topicName(q.subject,q.topic),q.topic,q.equation,NoteSchema.questionSource(q),number].some(
       value=>(value||'').normalize('NFKC').toLowerCase().includes(keyword)
     );
   }
@@ -81,9 +113,28 @@
 
   /* ===== 20-render.js ===== */
 // 题库列表、学科导航与首页概览的 HTML 生成。
-  function renderNav(){document.body.classList.toggle('subject-selected',!!selectedSubject);document.body.classList.toggle('overview-mode',!selectedSubject);{const t=$('page-title');if(t)t.textContent=selectedSubject?subject(selectedSubject).name+'错题':'';const ti=$('page-title-icon');if(ti)ti.innerHTML=selectedSubject?icon(subject(selectedSubject).icon):'';}const reviewNav=$('review-nav');const counts=s=>state.questions.filter(q=>!s||q.subject===s).length;$('subject-nav').innerHTML=`<button class="nav-item ${selectedSubject?'':'active'}" data-subject=""><span>${icon('book')}题库总览</span><small>${counts('')}</small></button>`+subjects.map(s=>`<button class="nav-item ${selectedSubject===s.id?'active':''}" data-subject="${s.id}"><span>${icon(s.icon)}${s.name}</span><small>${counts(s.id)}</small></button>`).join('');$('subject-nav').append(reviewNav);}
-  function renderTopics(){const topics=selectedSubject?subject(selectedSubject).topics:subjects.flatMap(s=>s.topics);topicFilters=new Set([...topicFilters].filter(t=>topics.includes(t)));const options=$('topic-options-filter');options.classList.remove('expanded');options.innerHTML=topics.length?topics.map(t=>`<label class="topic-option"><input type="checkbox" value="${esc(t)}" ${topicFilters.has(t)?'checked':''}><span>${esc(t)}</span></label>`).join(''):'<span class="no-topics">暂无题目类别</span>';const hasMore=options.scrollHeight>options.clientHeight+1;options.classList.toggle('expanded',topicsExpanded);const toggle=$('topic-expand');toggle.hidden=!hasMore;toggle.textContent=topicsExpanded?'收起类别':'展开全部类别';toggle.setAttribute('aria-expanded',String(topicsExpanded));$('topic-summary').textContent=topicFilters.size?`已选 ${topicFilters.size} 类`:'全部类别';}
-  function dailyUploadChart(){const days=Array.from({length:30},(_,i)=>{const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()-(29-i));return {key:localDate(date),count:0};});const counts=new Map(days.map(day=>[day.key,day]));for(const q of state.questions){const day=counts.get(localDate(q.createdAt));if(day)day.count++;}const max=Math.max(1,...days.map(day=>day.count));const total=days.reduce((sum,day)=>sum+day.count,0);return `<section class="daily-chart" aria-label="近 30 天每日上传错题数量"><div class="chart-heading"><div><h3>每日上传</h3><p>近 30 天 · 按首次录入日期统计</p></div><span>${total} 道新题</span></div><div class="daily-bars" data-overview-plot role="img" aria-label="${days.map(day=>`${day.key}：${day.count} 道`).join('；')}">${days.map((day,i)=>`<div class="daily-day" data-chart-hint="${day.key} · ${day.count} 道"><div class="daily-bar-track"><span class="daily-bar ${day.count?'has-data':''}" style="height:${day.count?Math.max(8,Math.round(day.count/max*100)):3}%"></span></div><span class="daily-tick">${i===0||i===9||i===19||i===29?esc(day.key.slice(5)):''}</span></div>`).join('')}<span class="overview-chart-tooltip" aria-hidden="true" hidden></span></div></section>`;}
+  let summarizedQuestions, librarySummary;
+  function summarizeLibrary(){
+    if(summarizedQuestions===state.questions)return librarySummary;
+    const bySubject=new Map(), wrongBySubject=new Map(), topicCounts=new Map(), byDay=new Map();
+    const increment=(map,key)=>map.set(key,(map.get(key)||0)+1);
+    for(const q of state.questions){
+      increment(bySubject,q.subject);
+      increment(byDay,localDate(q.createdAt));
+      if(q.kind==='note')continue;
+      increment(wrongBySubject,q.subject);
+      const key=q.subject+'|'+q.topic;
+      const item=topicCounts.get(key)||{subject:q.subject,topic:NoteSchema.topicName(q.subject,q.topic),count:0};
+      item.count++;
+      topicCounts.set(key,item);
+    }
+    const topics=[...topicCounts.values()].sort((a,b)=>b.count-a.count||a.topic.localeCompare(b.topic,'zh-CN')).slice(0,8);
+    summarizedQuestions=state.questions;
+    return librarySummary={bySubject,wrongBySubject,topicCounts,topics,byDay};
+  }
+  function renderNav(){document.body.classList.toggle('subject-selected',!!selectedSubject);document.body.classList.toggle('overview-mode',!selectedSubject);{const t=$('page-title');if(t)t.textContent=selectedSubject?subject(selectedSubject).name+'错题':'';const ti=$('page-title-icon');if(ti)ti.innerHTML=selectedSubject?icon(subject(selectedSubject).icon):'';}const reviewNav=$('review-nav');const {bySubject}=summarizeLibrary();$('subject-nav').innerHTML=`<button class="nav-item ${selectedSubject?'':'active'}" data-subject=""><span>${icon('book')}题库总览</span><small>${state.questions.length}</small></button>`+subjects.map(s=>`<button class="nav-item ${selectedSubject===s.id?'active':''}" data-subject="${s.id}"><span>${icon(s.icon)}${s.name}</span><small>${bySubject.get(s.id)||0}</small></button>`).join('');$('subject-nav').append(reviewNav);}
+  function renderTopics(){const optionsByTopic=(selectedSubject?[subject(selectedSubject)]:subjects).flatMap(s=>s.topics.map(id=>[id,NoteSchema.topicName(s.id,id)]));const topics=optionsByTopic.map(([id])=>id);topicFilters=new Set([...topicFilters].filter(t=>topics.includes(t)));const options=$('topic-options-filter');options.classList.remove('expanded');options.innerHTML=topics.length?optionsByTopic.map(([t,name])=>`<label class="topic-option"><input type="checkbox" value="${esc(t)}" ${topicFilters.has(t)?'checked':''}><span>${esc(name)}</span></label>`).join(''):'<span class="no-topics">暂无题目类别</span>';const hasMore=options.scrollHeight>options.clientHeight+1;options.classList.toggle('expanded',topicsExpanded);const toggle=$('topic-expand');toggle.hidden=!hasMore;toggle.textContent=topicsExpanded?'收起类别':'展开全部类别';toggle.setAttribute('aria-expanded',String(topicsExpanded));$('topic-summary').textContent=topicFilters.size?`已选 ${topicFilters.size} 类`:'全部类别';}
+  function dailyUploadChart(byDay){const days=Array.from({length:30},(_,i)=>{const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()-(29-i));const key=localDate(date);return {key,count:byDay.get(key)||0};});const max=Math.max(1,...days.map(day=>day.count));const total=days.reduce((sum,day)=>sum+day.count,0);return `<section class="daily-chart" aria-label="近 30 天每日上传记录数量"><div class="chart-heading"><div><h3>每日上传</h3><p>近 30 天 · 含错题与笔记</p></div><span>${total} 条新记录</span></div><div class="daily-bars" data-overview-plot role="img" aria-label="${days.map(day=>`${day.key}：${day.count} 道`).join('；')}">${days.map((day,i)=>`<div class="daily-day" data-chart-hint="${day.key} · ${day.count} 条"><div class="daily-bar-track"><span class="daily-bar ${day.count?'has-data':''}" style="height:${day.count?Math.max(8,Math.round(day.count/max*100)):3}%"></span></div><span class="daily-tick">${i===0||i===9||i===19||i===29?esc(day.key.slice(5)):''}</span></div>`).join('')}<span class="overview-chart-tooltip" aria-hidden="true" hidden></span></div></section>`;}
   // Two different situations, two different messages: a subject that holds no
   // questions at all needs an entry point, not advice about filters.
   function hasActiveFilter(){
@@ -154,18 +205,15 @@
     const overview=$('overview');
     overview.hidden=!!selectedSubject;
     if(selectedSubject)return;
-    const topicCounts=new Map();
-    const wrongBySubject=new Map();
-    for(const q of state.questions){if(q.kind!=='note')wrongBySubject.set(q.subject,(wrongBySubject.get(q.subject)||0)+1);const key=q.subject+'|'+q.topic;const item=topicCounts.get(key)||{subject:q.subject,topic:q.topic,count:0};item.count++;topicCounts.set(key,item);}
-    const topics=[...topicCounts.values()].sort((a,b)=>b.count-a.count||a.topic.localeCompare(b.topic,'zh-CN')).slice(0,8);
+    const {bySubject,wrongBySubject,topicCounts,topics,byDay}=summarizeLibrary();
     const maxTopic=topics[0]?.count||1;
-    overview.innerHTML=`${dailyUploadChart()}<div class="overview-breakdown"><section class="category-chart"><div class="chart-heading"><div><h3>错题类别</h3><p>按专题统计题目数量</p></div><span>${topicCounts.size} 个类别</span></div>${topics.length?`<div class="chart-rows">${topics.map(x=>`<div class="chart-row"><span class="chart-subject">${subject(x.subject).name}</span><span class="chart-topic" title="${esc(x.topic)}">${esc(x.topic)}</span><span class="chart-track"><i style="width:${Math.max(8,Math.round(x.count/maxTopic*100))}%"></i></span><b>${x.count}</b></div>`).join('')}</div>`:'<p class="chart-empty">录入题目后会显示类别统计</p>'}</section>${subjectPieChart(wrongBySubject)}</div><div class="overview-grid">${subjects.map(s=>`<button data-subject="${s.id}" class="overview-card"><span>${icon(s.icon)} ${s.name}</span><strong>${state.questions.filter(q=>q.subject===s.id).length}</strong><small>查看题目 →</small></button>`).join('')}</div>`;
+    overview.innerHTML=`${dailyUploadChart(byDay)}<div class="overview-breakdown"><section class="category-chart"><div class="chart-heading"><div><h3>错题类别</h3><p>按专题统计错题数量</p></div><span>${topicCounts.size} 个类别</span></div>${topics.length?`<div class="chart-rows">${topics.map(x=>`<div class="chart-row"><span class="chart-subject">${subject(x.subject).name}</span><span class="chart-topic" title="${esc(x.topic)}">${esc(x.topic)}</span><span class="chart-track"><i style="width:${Math.max(8,Math.round(x.count/maxTopic*100))}%"></i></span><b>${x.count}</b></div>`).join('')}</div>`:'<p class="chart-empty">录入题目后会显示类别统计</p>'}</section>${subjectPieChart(wrongBySubject)}</div><div class="overview-grid">${subjects.map(s=>`<button data-subject="${s.id}" class="overview-card"><span>${icon(s.icon)} ${s.name}</span><strong>${bySubject.get(s.id)||0}</strong><small>查看题目 →</small></button>`).join('')}</div>`;
   }
   function questionCardHTML(q,order){
     const s=subject(q.subject),selected=order>0;
     const answerId='list-answer-'+esc(q.id);
     const answerToggle=q.answer?`<button type="button" class="card-answer-toggle" aria-label="查看本题答案" aria-expanded="false" aria-controls="${answerId}">${icon('eye')}</button>`:'';
-    return `<article class="question-card ${selected?'selected':''}"><div class="card-top"><label class="question-select"><input type="checkbox" data-select-id="${esc(q.id)}" aria-label="选择题目：${esc(q.topic)}" ${selected?'checked':''}><span>本次打印</span>${order?`<em class="selection-order">第 ${order} 题</em>`:``}</label><div class="tags"><span class="tag subject" style="${style(s)}">${s.name}</span><span class="tag entry-kind-tag">${q.kind==='note'?'笔记':'错题'}</span>${NoteSchema.questionSource(q)?`<span class="tag entry-kind-tag">${esc(NoteSchema.questionSource(q))}</span>`: ''}<span class="topic-tag" title="${esc(q.topic)}">${esc(q.topic)}</span></div><span class="card-status ${q.mastered?'mastered':''}">${q.mastered?'✓ 已掌握':'○ 待复习'}</span></div><div class="question-text">${richQuestion(q)}</div>${q.answer?`<div class="card-answer" id="${answerId}" tabindex="0"><b>答案</b><span class="card-answer-content">${richQuestion(q,'answer')}</span><span class="card-answer-placeholder">移到此处查看</span></div>`:''}<div class="card-bottom"><small>${q.demo?'示例题 · ':''}上传于 ${q.createdAt?new Date(q.createdAt).toLocaleDateString('zh-CN'):''}</small><div class="card-actions">${answerToggle}<button type="button" class="review-toggle" data-action="toggle-solution" data-id="${esc(q.id)}" aria-expanded="false" aria-controls="solution-${esc(q.id)}" title="展开或收起解析">${icon('book')}<span>解析</span><i class="chevron" aria-hidden="true"></i></button><label class="mastery-switch" title="点一下切换已掌握"><input type="checkbox" role="switch" class="mastery-toggle" data-mastery-id="${esc(q.id)}" aria-label="${esc(q.topic)}：已掌握" ${q.mastered?'checked':''}><span class="mastery-track" aria-hidden="true"></span><span class="mastery-label">${q.mastered?'已掌握':'待复习'}</span></label><button data-action="edit" data-id="${esc(q.id)}">${icon('edit')}编辑</button><button data-action="delete" data-id="${esc(q.id)}" class="delete" aria-label="删除题目">${icon('trash')}</button></div></div><div class="card-solution" id="solution-${esc(q.id)}" hidden><div class="solution-body">${solutionHTML(q)}</div></div></article>`;
+    return `<article class="question-card ${selected?'selected':''}"><div class="card-top"><label class="question-select"><input type="checkbox" data-select-id="${esc(q.id)}" aria-label="选择题目：${esc(NoteSchema.topicName(q.subject,q.topic))}" ${selected?'checked':''}><span>本次打印</span>${order?`<em class="selection-order">第 ${order} 题</em>`:``}</label><div class="tags"><span class="tag subject" style="${style(s)}">${s.name}</span><span class="tag entry-kind-tag">${q.kind==='note'?'笔记':'错题'}</span>${NoteSchema.questionSource(q)?`<span class="tag entry-kind-tag">${esc(NoteSchema.questionSource(q))}</span>`: ''}<span class="topic-tag" title="${esc(NoteSchema.topicName(q.subject,q.topic))}">${esc(NoteSchema.topicName(q.subject,q.topic))}</span></div><span class="card-status ${q.mastered?'mastered':''}">${q.mastered?'✓ 已掌握':'○ 待复习'}</span></div><div class="question-text">${richQuestion(q)}</div>${q.answer?`<div class="card-answer" id="${answerId}" tabindex="0"><b>答案</b><span class="card-answer-content">${richQuestion(q,'answer')}</span><span class="card-answer-placeholder">移到此处查看</span></div>`:''}<div class="card-bottom"><small>${q.demo?'示例题 · ':''}上传于 ${q.createdAt?new Date(q.createdAt).toLocaleDateString('zh-CN'):''}</small><div class="card-actions">${answerToggle}<button type="button" class="review-toggle" data-action="toggle-solution" data-id="${esc(q.id)}" aria-expanded="false" aria-controls="solution-${esc(q.id)}" title="展开或收起解析">${icon('book')}<span>解析</span><i class="chevron" aria-hidden="true"></i></button><label class="mastery-switch" title="点一下切换已掌握"><input type="checkbox" role="switch" class="mastery-toggle" data-mastery-id="${esc(q.id)}" aria-label="${esc(NoteSchema.topicName(q.subject,q.topic))}：已掌握" ${q.mastered?'checked':''}><span class="mastery-track" aria-hidden="true"></span><span class="mastery-label">${q.mastered?'已掌握':'待复习'}</span></label><button data-action="edit" data-id="${esc(q.id)}">${icon('edit')}编辑</button><button data-action="delete" data-id="${esc(q.id)}" class="delete" aria-label="删除题目">${icon('trash')}</button></div></div><div class="card-solution" id="solution-${esc(q.id)}" hidden><div class="solution-body">${solutionHTML(q)}</div></div></article>`;
   }
   function renderQuestionPage(pageItems){
     const list=$('question-list');
@@ -199,7 +247,7 @@
     return Number.isFinite(value)&&value>0?Math.floor(value):1;
   }
   let currentFilteredItems=[];
-  function renderList(items=filtered()){
+  function renderList(items=filtered(),refreshPreview=true){
     currentFilteredItems=items;
     for(const button of $('entry-kind-filter').querySelectorAll('[data-entry-kind]')){
       const active=button.dataset.entryKind===kindFilter;
@@ -214,9 +262,9 @@
     renderQuestionPage(pageItems);
     renderQuestionPagination(pageCount,items.length);
     renderSelection(items);
-    schedulePreview();
+    if(refreshPreview)schedulePreview();
   }
-  $('question-pagination').onclick=e=>{const button=e.target.closest('[data-page]');if(!button||button.disabled)return;currentPage=Number(button.dataset.page);syncPageInURL();renderList(currentFilteredItems);if(mobileLayout.matches)$('question-list').scrollIntoView({block:'start'});};
+  $('question-pagination').onclick=e=>{const button=e.target.closest('[data-page]');if(!button||button.disabled)return;currentPage=Number(button.dataset.page);syncPageInURL();renderList(currentFilteredItems,false);if(mobileLayout.matches)$('question-list').scrollIntoView({block:'start'});};
 
   /* ===== 30-mascot.js ===== */
 // 侧栏比格多栋表情与点击动效。
@@ -224,7 +272,8 @@
     {motion:'original',file:'brand-dog.png',clickFile:'brand-dog-wave.png',name:'挥拳的比格多栋',src:'/brand-dog.png'},
     {motion:'smug',file:'beagle-smug.png',name:'得意的比格多栋'},
     {motion:'sad',file:'beagle-sad.png',name:'委屈的比格多栋'},
-    {motion:'pleading',file:'beagle-pleading.png',name:'撒娇的比格多栋'}
+    {motion:'pleading',file:'beagle-pleading.png',name:'撒娇的比格多栋'},
+    {motion:'crying',file:'beagle-crying.png',name:'爆哭的比格多栋'}
   ];
   function initHomeMascot(){
     const button=$('home-mascot'),image=$('home-mascot-image');
@@ -324,7 +373,7 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
 
   /* ===== 50-editor.js ===== */
 // 编辑面板：打开、保存、草稿、化学核查与打印设置同步。
-  const editorImages=new ImageEditor(()=>{checkEditorFormulas();schedulePreview();});
+  const editorImages=new ImageEditor(schedulePreview);
   // 编辑页的学科/专题下拉：与「全部状态」同一套自定义按钮 + 弹出菜单
   function editorSelectParts(id){return {select:$(id),button:$(id+'-menu-button'),label:$(id+'-menu-label'),menu:$(id+'-menu')};}
   function closeEditorSelect(id){const p=editorSelectParts(id);if(!p.menu)return;p.menu.hidden=true;p.button?.setAttribute('aria-expanded','false');}
@@ -369,8 +418,15 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllEditorSelects();});
 
-  function updateEditorTopics(selected=$('f-topic').value){const s=subject($('f-subject').value),topic=$('f-topic');topic.innerHTML='<option value="">选择类别</option>'+s.topics.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');topic.value=s.topics.includes(selected.trim())?selected.trim():'';syncEditorSelect('f-subject');syncEditorSelect('f-topic');}
-  function draft(){const original=state.questions.find(q=>q.id===editingId);return {id:editingId||editorImages.questionId||'draft',subject:$('f-subject').value,kind:$('f-kind').value,source:$('f-source').value.trim(),topic:$('f-topic').value.trim()||'未命名专题',question:$('f-question').value,answer:$('f-answer').value,explanation:$('f-explanation').value,notes:$('f-notes').value,equation:original?.equation||'',equationPlain:original?.equationPlain||'',images:editorImages.images({preview:true}),mastered:$('f-mastered').checked};}
+  function updateEditorTopics(selected=$('f-topic').value){const s=subject($('f-subject').value),topic=$('f-topic');topic.innerHTML='<option value="">选择类别</option>'+s.topics.map(t=>`<option value="${esc(t)}">${esc(NoteSchema.topicName(s.id,t))}</option>`).join('');topic.value=NoteSchema.topicId(s.id,selected);syncEditorSelect('f-subject');syncEditorSelect('f-topic');}
+  function editorTopic(subjectId,original){
+    const topics=NoteSchema.topics[subjectId]||[];
+    const selected=$('f-topic').value.trim();
+    if(topics.includes(selected))return selected;
+    if(original?.subject===subjectId&&topics.includes(original.topic))return original.topic;
+    return '';
+  }
+  function draft(){const original=state.questions.find(q=>q.id===editingId);const subjectId=$('f-subject').value;return {id:editingId||editorImages.questionId||'draft',subject:subjectId,kind:$('f-kind').value,source:$('f-source').value.trim(),topic:editorTopic(subjectId,original),question:$('f-question').value,answer:$('f-answer').value,explanation:$('f-explanation').value,notes:$('f-notes').value,equation:original?.equation||'',equationPlain:original?.equationPlain||'',images:editorImages.images({preview:true}),mastered:$('f-mastered').checked};}
   function syncEditorMasteryLabel(){const input=$('f-mastered');if(!input)return;const label=input.closest('.mastery-switch')?.querySelector('.mastery-label');if(label)label.textContent=input.checked?'已掌握':'待复习';input.setAttribute('aria-label',input.checked?'这道题已掌握，点击切换为待复习':'这道题待复习，点击切换为已掌握');}
   function openEditor(q=null,restored=false,push=true){if(!ready){toast('请先启动本地服务并等待题库连接。');return;}if(typeof pauseScrollTracking==='function')pauseScrollTracking();const editorPath='/'+(q?.subject||selectedSubject||'chemistry')+'/edit/'+(q?.id||'new');if(push&&location.pathname!==editorPath)history.pushState({editorFrom:location.pathname},'',editorPath);document.title=(q?'编辑题目':'录入新题')+' · 错题本';editing=true;document.body.classList.add('editing-mode');editingRevision=revision;editingId=q?.id||null;editorImages.open(editingId||id(),q?.images||[]);$('collection-panel').hidden=true;$('editor-panel').hidden=false;$('editor-heading').textContent=editingId?'编辑题目':'录入新题';setupStickyFooter();$('form-message').textContent='';$('f-subject').value=q?.subject||selectedSubject||'chemistry';$('f-source').value=q?NoteSchema.questionSource(q):'';$('f-kind').value=q?.kind||(q?'question':kindFilter||'question');['question','answer','explanation','notes'].forEach(k=>$('f-'+k).value=q?.[k]||'');editorImages.syncFields();$('f-mastered').checked=!!q?.mastered;syncEditorMasteryLabel();updateEditorTopics(q?.topic||'');checkEditorFormulas();updatePreview();if(!restored)$('f-topic-menu-button').focus();}
   // Keep the save bar in view while editing, and let it settle into the card
@@ -396,7 +452,7 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
     stickyCleanup=()=>{window.removeEventListener('scroll',onScroll);window.removeEventListener('resize',onScroll);footer.classList.remove('editor-sticky');};
     requestAnimationFrame(update);
   }
-  function closeEditor(navigate=true){if(navigate&&/\/edit\//.test(location.pathname)){if(history.state?.editorFrom)history.back();else history.replaceState(null,'','/'+(selectedSubject||'overview'));}document.title=(selectedSubject?subject(selectedSubject).name+'错题':'错题本')+' · 比格多栋';editing=false;document.body.classList.remove('editing-mode');editingId=null;if(stickyCleanup){stickyCleanup();stickyCleanup=null;}$('collection-panel').hidden=false;$('editor-panel').hidden=true;renderAll();if(typeof resumeScrollTracking==='function')resumeScrollTracking();}
+  function closeEditor(navigate=true){clearTimeout(editorFormulaTimer);if(navigate&&/\/edit\//.test(location.pathname)){if(history.state?.editorFrom)history.back();else history.replaceState(null,'','/'+(selectedSubject||'overview'));}document.title=(selectedSubject?subject(selectedSubject).name+'错题':'错题本')+' · 比格多栋';editing=false;document.body.classList.remove('editing-mode');editingId=null;if(stickyCleanup){stickyCleanup();stickyCleanup=null;}$('collection-panel').hidden=false;$('editor-panel').hidden=true;renderAll();if(typeof resumeScrollTracking==='function')resumeScrollTracking();}
   function cancelEditor(){const d=draft();const original=state.questions.find(q=>q.id===editingId);const dirty=['subject','topic','question','answer','explanation','notes','equation','equationPlain','mastered'].some(k=>(d[k]||'')!==(original?.[k]||''));if((dirty||editorImages.dirty())&&['question','answer','explanation','notes'].some(k=>d[k])){showConfirm('放弃本次编辑？','未保存的内容将被丢弃。','放弃编辑',closeEditor);}else closeEditor();}
   $('add-btn').onclick=()=>{if(editing){toast('正在编辑中，保存后可继续录入。');return;}openEditor();};$('back-btn').onclick=cancelEditor;$('cancel-btn').onclick=cancelEditor;
   const topicRequiredMessage='请选择该学科规定的题目类别。';
@@ -409,14 +465,35 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
     if($('form-message').textContent===topicRequiredMessage)$('form-message').textContent='';
     schedulePreview();
   });
-  $('f-subject').addEventListener('change',()=>{updateEditorTopics('');checkEditorFormulas();schedulePreview();});
-  $('question-form').addEventListener('input',()=>{checkEditorFormulas();schedulePreview();});
-  $('question-form').onsubmit=async e=>{e.preventDefault();const q=draft();const original=state.questions.find(x=>x.id===editingId);q.topic=$('f-topic').value.trim();if(!q.topic&&original?.subject===q.subject&&subject(q.subject).topics.includes(original.topic))q.topic=original.topic;for(const k of ['question','answer','explanation','notes'])q[k]=Formula.normalizeDelimiters(q[k]||'');q.question=q.question.trim();if(!editingId&&!q.source)q.source=NoteSchema.questionSource({question:q.question,kind:q.kind});q.id=editingId||editorImages.questionId;if(formulaProblems(q).length){const labels={question:'题目',answer:'答案',explanation:'解析',notes:'备注',equation:'方程式'};const problems=formulaProblems(q);$('form-message').textContent='请检查'+labels[problems[0].field]+'中的公式：'+problems[0].error;editorImages.focusField(problems[0].field);return;}if(!subject(q.subject).topics.includes(q.topic)){requireEditorTopic();return;}if(!validQuestion(q)){$('form-message').textContent='请填写学科、专题和题目，并检查内容长度。';return;}try{await editorImages.upload();q.images=editorImages.images();for(const k of ['question','answer','explanation','notes'])q[k]=Formula.normalizeDelimiters($('f-'+k).value);q.question=q.question.trim();}catch(error){$('form-message').textContent=error.message;return;}const record={...q,originalNumber:original?.originalNumber||NoteSchema.originalNumber({question:q.source||q.question}),id:original?.id||q.id,createdAt:original?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),demo:false};const next={...state,questions:original?state.questions.map(x=>x.id===original.id?record:x):[record,...state.questions]};if(await commit(next,editingRevision,{silent:true})){closeEditor();toast('已写入本地题库，打印预览已同步。');}};
-  function checkEditorFormulas(){const q=draft();const problems=formulaProblems(q);$('formula-check').classList.toggle('has-errors',!!problems.length);$('formula-check').textContent=problems.length?'公式待修正：'+problems.map(p=>({question:'题目',answer:'答案',explanation:'解析',notes:'备注',equation:'方程式'}[p.field]||p.field)+'：'+p.error).join('；'):'公式语法检查通过 · KaTeX + mhchem（不代表推导或反应结论已验证）';$('save-question-btn').disabled=editorImages.busy;}
+  $('f-subject').addEventListener('change',()=>{updateEditorTopics('');schedulePreview();});
+  $('question-form').addEventListener('input',e=>{scheduleEditorFormulaCheck(e.target.id);schedulePreview();});
+  $('question-form').onsubmit=async e=>{e.preventDefault();const q=draft();const original=state.questions.find(x=>x.id===editingId);for(const k of ['question','answer','explanation','notes'])q[k]=Formula.normalizeDelimiters(q[k]||'');q.question=q.question.trim();if(!editingId&&!q.source)q.source=NoteSchema.questionSource({question:q.question,kind:q.kind});q.id=editingId||editorImages.questionId;const problems=formulaProblems(q);if(problems.length){const labels={question:'题目',answer:'答案',explanation:'解析',notes:'备注',equation:'方程式'};$('form-message').textContent='请检查'+labels[problems[0].field]+'中的公式：'+problems[0].error;editorImages.focusField(problems[0].field);return;}if(!subject(q.subject).topics.includes(q.topic)){requireEditorTopic();return;}if(!validQuestion(q)){$('form-message').textContent='请填写学科、专题和题目，并检查内容长度。';return;}try{await editorImages.upload();q.images=editorImages.images();for(const k of ['question','answer','explanation','notes'])q[k]=Formula.normalizeDelimiters($('f-'+k).value);q.question=q.question.trim();}catch(error){$('form-message').textContent=error.message;return;}const record={...q,originalNumber:original?.originalNumber||NoteSchema.originalNumber({question:q.source||q.question}),id:original?.id||q.id,createdAt:original?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),demo:false};const saved=original?await saveEditorChanges(record,original):await commit({...state,questions:[record,...state.questions]},editingRevision,{silent:true});if(saved){closeEditor();toast('已写入本地题库，打印预览已同步。');}};
+  function saveEditorChanges(record,original){
+    const {id,createdAt,updatedAt,...fields}=record;
+    const changes=Object.fromEntries(Object.entries(fields).filter(([key,value])=>JSON.stringify(value)!==JSON.stringify(original[key])));
+    return commit({question:{id,changes}},editingRevision,{question:true,silent:true});
+  }
+  let editorFormulaTimer;
+  const pendingFormulaFields=new Set();
+  const editorFormulaErrors=new Map();
+  function scheduleEditorFormulaCheck(id){
+    const field=id?.replace(/^(f-|rich-)/,'');
+    if(!formulaFields.includes(field))return;
+    pendingFormulaFields.add(field);
+    clearTimeout(editorFormulaTimer);
+    editorFormulaTimer=setTimeout(()=>checkEditorFormulas(pendingFormulaFields),200);
+  }
+  function checkEditorFormulas(fields=formulaFields){
+    clearTimeout(editorFormulaTimer);
+    const q=draft();
+    for(const field of fields)editorFormulaErrors.set(field,formulaProblems(q,[field]));
+    pendingFormulaFields.clear();
+    const problems=formulaFields.flatMap(field=>editorFormulaErrors.get(field)||[]);
+    $('formula-check').classList.toggle('has-errors',!!problems.length);$('formula-check').textContent=problems.length?'公式待修正：'+problems.map(p=>({question:'题目',answer:'答案',explanation:'解析',notes:'备注',equation:'方程式'}[p.field]||p.field)+'：'+p.error).join('；'):'公式语法检查通过 · KaTeX + mhchem（不代表推导或反应结论已验证）';}
 
   let confirmAction=null;function showConfirm(title,message,label,action){$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-ok').textContent=label;confirmAction=action;$('confirm-dialog').showModal();}$('confirm-cancel').onclick=()=>$('confirm-dialog').close();$('confirm-ok').onclick=()=>{$('confirm-dialog').close();confirmAction?.();};
   function confirmDelete(q){showConfirm('删除这道题？','删除前会保留一份本地历史快照，可从 data/history 恢复。','删除题目',async()=>{if(await commit({...state,questions:state.questions.filter(x=>x.id!==q.id)})){renderAll();toast('题目已删除');}});}
-  async function setSetting(k,v){const before=revision;const next={...state,settings:{...state.settings,[k]:v}};if(await commit(next)){if(editing&&editingRevision===before)editingRevision=revision;syncSettings();updatePreview();}else syncSettings();}
+  async function setSetting(k,v){const before=revision;if(await commit({settings:{[k]:v}},before,{settings:true})){if(editing&&editingRevision===before)editingRevision=revision;syncSettings();updatePreview();}else syncSettings();}
   function syncSettings(){const s=state.settings;$('paper-size').value=s.paper;if(typeof syncPaperMenu==='function')syncPaperMenu();$('compact-mode').checked=s.compact;$('show-answer').checked=s.answer!==false;$('show-explanation').checked=s.explanation!==false;$('show-notes').checked=s.notes!==false;for(const[n,v]of[['single-column',1],['double-column',2]]){$(n).classList.toggle('active',s.columns===v);$(n).setAttribute('aria-pressed',s.columns===v?'true':'false');}}
   $('paper-size').onchange=e=>setSetting('paper',e.target.value);$('single-column').onclick=()=>setSetting('columns',1);$('double-column').onclick=()=>setSetting('columns',2);$('compact-mode').onchange=e=>setSetting('compact',e.target.checked);$('show-answer').onchange=e=>setSetting('answer',e.target.checked);$('show-explanation').onchange=e=>setSetting('explanation',e.target.checked);$('show-notes').onchange=e=>setSetting('notes',e.target.checked);
   function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(()=>{updatePreview();},170);}
@@ -646,7 +723,26 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
 
   /* ===== 55-preview.js ===== */
 // 打印预览与保存设置的联动，以及富文本字段的定位工具。
-  async function updatePreview(){clearTimeout(previewTimer);try{await Printer.render(editing?[draft()]:selectedSubject?selectedQuestions():[],state.settings,editing?subject($('f-subject').value).name+'错题专题集':titleFor(),Object.fromEntries(subjects.map(s=>[s.id,s.name])));}catch(e){$('preview-meta').textContent='预览失败：'+e.message;$('print-btn').disabled=true;}}
+  let previewJob;
+  function updatePreview(force=false){
+    clearTimeout(previewTimer);
+    const items=editing?[draft()]:selectedSubject?selectedQuestions():[];
+    const title=editing?subject($('f-subject').value).name+'错题专题集':titleFor();
+    const key=JSON.stringify([title,state.settings,items.map(({id,subject,topic,question,answer,explanation,notes,equation,images})=>[
+      id,subject,topic,question,answer,explanation,notes,equation,images
+    ])]);
+    if(!force&&previewJob?.key===key)return previewJob.promise;
+
+    const job={key};
+    previewJob=job;
+    job.promise=Printer.render(items,state.settings,title,Object.fromEntries(subjects.map(s=>[s.id,s.name]))).catch(error=>{
+      if(previewJob!==job)return;
+      previewJob=null;
+      $('preview-meta').textContent='预览失败：'+error.message;
+      $('print-btn').disabled=true;
+    });
+    return job.promise;
+  }
   $('prev-page').onclick=()=>Printer.previous();$('next-page').onclick=()=>Printer.next();window.addEventListener('resize',Printer.scale);window.addEventListener('resize',()=>{if(selectedSubject)renderTopics();});$('print-btn').onclick=async()=>{await updatePreview();if(!$('print-btn').disabled)window.print();};
   const previewCanvas = $('preview-canvas');
   const previewDialog = $('pdf-preview-dialog');
@@ -867,7 +963,7 @@ $('status-menu-button').onclick=()=>{const menu=$('status-menu');if(!menu.hidden
   function reviewQuestionHTML(question,index){
     const hasSolution=['answer','explanation','equation','notes'].some(key=>question[key]);
     const solution=[['answer','答案'],['explanation','解析'],['equation','方程式'],['notes','备注']].filter(([key])=>question[key]).map(([key,label])=>`<div><b>${label}</b>${richQuestion(question,key)}</div>`).join('');
-    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(question.topic)}</h2><div class="question-text">${richQuestion(question)}</div>${hasSolution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
+    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(NoteSchema.topicName(question.subject,question.topic))}</h2><div class="question-text">${richQuestion(question)}</div>${hasSolution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
   }
   function initReview(){
     const selector=$('review-subject');
@@ -923,7 +1019,7 @@ document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>{const snipp
   $('f-subject').innerHTML=subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');if($('f-mastered')){$('f-mastered').addEventListener('change',syncEditorMasteryLabel);syncEditorMasteryLabel();}
     const missing=Object.keys(structuralIds).filter(id=>!structuralIds[id]);if(missing.length)console.warn('错题本页面缺少元素：'+missing.join('、')+'，请检查 dist/index.html 与 dist/app.js 是否同一版本。');
     initHomeMascot();initReview();icons();syncSettings();renderAll();
-  loadLocal().then(()=>{applyDatePreset();syncDateMenu();currentPage=initialPage;renderAll();syncPageInURL();watchScrollPosition();const route=routeEditor();if(!route)return;const q=route.id==='new'?null:state.questions.find(q=>q.id===route.id&&q.subject===route.subject);if(q||route.id==='new')openEditor(q,true,false);});setInterval(()=>loadLocal(),2000);document.fonts.ready.then(schedulePreview);document.fonts.addEventListener('loadingdone',schedulePreview);
+  loadLocal().then(()=>{applyDatePreset();syncDateMenu();currentPage=initialPage;renderAll();syncPageInURL();watchScrollPosition();const route=routeEditor();if(!route)return;const q=route.id==='new'?null:state.questions.find(q=>q.id===route.id&&q.subject===route.subject);if(q||route.id==='new')openEditor(q,true,false);});setInterval(()=>loadLocal(),2000);document.fonts.ready.then(()=>updatePreview(true));document.fonts.addEventListener('loadingdone',()=>updatePreview(true));
 
   /* ===== 75-scroll.js ===== */
 // 记忆列表滚动位置：刷新、从编辑页返回时都能回到原处。

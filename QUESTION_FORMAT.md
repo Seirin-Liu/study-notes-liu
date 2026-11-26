@@ -9,7 +9,7 @@
 | `id` | 唯一标识，只含字母、数字、连字符、下划线，最多 80 字符 |
 | `subject` | `chemistry`、`biology`、`math`、`physics`、`chinese`、`english` |
 | `kind` | `question`（错题）或 `note`（笔记）。旧条目和未指定类型的新条目默认为错题 |
-| `topic` | 必须选用 `data/topics.json` 中对应学科的一个类别，不得自定义 |
+| `topic` | 填写 `data/topics.json` 中对应学科的类别 ID，例如 `chem-organic`。网页按字典显示中文名称 |
 | `source` | 可选来源，最多 120 字，例如 `2024 天津高考数学 第19题` |
 | `question` | 错题的题干与所需选项，或笔记标题，必填 |
 | `answer` | 正确答案，字符串 |
@@ -20,7 +20,7 @@
 | `mastered` | `true` 或 `false` |
 | `images` | 可选题图数组，每项为 `{"file":"diagram.png","alt":"装置示意图","placement":"manual"}`；文件放在 `data/assets/<id>/`。`placement` 可省略以兼容旧题图 |
 
-新增或更新题目时，先根据题意确定学科，再从 `data/topics.json` 的该学科清单中选择唯一类别。若题目跨多个知识点，按主要考查内容归类；不能确定时先询问。网页、导入脚本与题库保存都会拒绝清单外的类别。
+新增或更新题目时，先根据题意确定学科，再从 `data/topics.json` 的该学科清单中选择唯一类别 ID。导入旧记录时，仍可用字典中的中文名称，保存会转换为 ID。若题目跨多个知识点，按主要考查内容归类；不能确定时先询问。网页、导入脚本与题库保存都会拒绝清单外的类别。
 
 ### 错题和笔记怎么填
 

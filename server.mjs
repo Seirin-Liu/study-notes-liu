@@ -44,7 +44,11 @@ export function createApp({dataDirectory=process.env.ZHIXU_DATA_DIR||path.join(r
      if(req.headers['x-zhixu-local']!=='1'||!req.headers['content-type']?.startsWith('application/json'))return send(403,{error:'本地保存请求格式不正确。'});
      let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>10*1024*1024)return send(413,{error:'题库文件超过 10 MB。'});}
      let data;try{data=JSON.parse(body);}catch{return send(400,{error:'JSON 解析失败。'});}
-     return send(200,req.method==='PATCH'?await store.saveMastery(data||{},req.headers['if-match']):await store.save(data,req.headers['if-match']));
+     const revision=req.headers['if-match'];
+     if(req.method==='PUT')return send(200,await store.save(data,revision));
+     if(data?.question)return send(200,await store.saveQuestion(data.question,revision));
+     if(data?.settings)return send(200,await store.saveSettings(data.settings,revision));
+     return send(200,await store.saveMastery(data||{},revision));
     }
     return send(405,{error:'不支持的请求方法。'});
    }

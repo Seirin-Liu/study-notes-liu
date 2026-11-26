@@ -30,6 +30,11 @@ const modules = [
 ];
 
 async function build() {
+  const catalog = JSON.parse(await fs.readFile(path.join(root, 'data', 'topics.json'), 'utf8'));
+  const schemaPath = path.join(root, 'dist', 'data-schema.js');
+  const schema = await fs.readFile(schemaPath, 'utf8');
+  const updatedSchema = schema.replace(/^  const topicCatalog=.*;$/m, () => '  const topicCatalog=' + JSON.stringify(catalog) + ';');
+  if (updatedSchema !== schema) await fs.writeFile(schemaPath, updatedSchema);
   const parts = [];
   parts.push('/* 本文件由 node scripts/build-app.mjs 从 src/app/*.js 生成，请勿手工编辑。 */');
   parts.push('(() => {');

@@ -45,7 +45,7 @@ test('schema retains manual placement but strips transient preview data',()=>{
 });
 
 const source=await fs.readFile(new URL('../dist/print-preview.js',import.meta.url),'utf8');
-const context={window:{},ImageReferences:refs,document:{createElement:()=>({innerHTML:''})},Formula:{escape:s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),render:s=>s||''}};
+const context={window:{},NoteSchema:schema,ImageReferences:refs,document:{createElement:()=>({innerHTML:''})},Formula:{escape:s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),render:s=>s||''}};
 // Inspect the real print templates without requiring layout APIs in these unit tests.
 vm.runInNewContext(source.replace('window.Printer={','window.PrintTemplates={blockHTML,rich,page,renderedImages,imageSource};window.Printer={'),context);
 const templates=context.window.PrintTemplates;

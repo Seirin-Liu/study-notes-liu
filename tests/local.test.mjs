@@ -63,3 +63,58 @@ test('legacy questions default to question, and a note keeps its kind when saved
   await assert.rejects(t.store.save({...saved,questions:[{...note,kind:'other'},...rest]},saved.revision),{status:422});
  }finally{await t.cleanup();}
 });
+
+test('partial saves preserve revisions, backups and unrelated files',async()=>{
+ const t=await temporary();
+ const server=createApp({store:t.store,dataDirectory:t.directory});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const url='http://127.0.0.1:'+server.address().port+'/api/library';
+ const patch=(revision,body)=>fetch(url,{
+  method:'PATCH',headers:{'Content-Type':'application/json','X-Zhixu-Local':'1','If-Match':revision},
+  body:JSON.stringify(body)
+ });
+ const inode=async file=>(await fs.stat(file)).ino;
+ try{
+  const before=await t.store.read();
+  const original=before.questions.find(q=>q.subject==='chemistry');
+  const chemistryFile=t.store.subjectFile('chemistry');
+  const biologyFile=t.store.subjectFile('biology');
+  const biologyInode=await inode(biologyFile);
+  const settingsInode=await inode(t.store.settingsFile);
+
+  const edited=await patch(before.revision,{question:{id:original.id,changes:{explanation:'只修改解析'}}});
+  assert.equal(edited.status,200);
+  const edit=await edited.json();
+  assert.deepEqual(Object.keys(edit).sort(),['question','revision']);
+  assert.equal(edit.question.explanation,'只修改解析');
+  assert.equal(edit.question.createdAt,original.createdAt);
+  assert.equal(edit.question.answer,original.answer);
+  assert.equal(edit.question.topic,original.topic);
+  assert.equal(await inode(biologyFile),biologyInode);
+  assert.equal(await inode(t.store.settingsFile),settingsInode);
+  const history=path.join(t.directory,'history');
+  const [snapshot]=await fs.readdir(history);
+  assert.equal(JSON.parse(await fs.readFile(path.join(history,snapshot),'utf8')).questions.find(q=>q.id===original.id).explanation,original.explanation);
+  const stale=await patch(before.revision,{settings:{paper:'A4'}});
+  assert.equal(stale.status,409);
+  const invalid=await patch(edit.revision,{question:{id:original.id,changes:{explanation:String.raw`\(\badcommand\)`}}});
+  assert.equal(invalid.status,422);
+  assert.equal((await t.store.read()).revision,edit.revision);
+
+  const chemistryInode=await inode(chemistryFile);
+  const settings=await patch(edit.revision,{settings:{paper:'A4'}});
+  assert.equal(settings.status,200);
+  const saved=await settings.json();
+  assert.deepEqual(Object.keys(saved).sort(),['revision','settings']);
+  assert.deepEqual(saved.settings,{...before.settings,paper:'A4'});
+  assert.equal(await inode(chemistryFile),chemistryInode);
+  assert.equal(await inode(biologyFile),biologyInode);
+  assert.deepEqual(await fs.readdir(history),[snapshot]);
+  const after=await t.store.read();
+  assert.equal(after.revision,saved.revision);
+  assert.equal(after.questions.find(q=>q.id===original.id).explanation,'只修改解析');
+ }finally{
+  await new Promise(resolve=>server.close(resolve));
+  await t.cleanup();
+ }
+});

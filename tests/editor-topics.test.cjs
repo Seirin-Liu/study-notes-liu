@@ -9,7 +9,7 @@ function setup(){
  const displayed={};
  const topic={get value(){return value},set value(v){value=v},get innerHTML(){return html},set innerHTML(v){html=v;value=''}};
  const fields={'f-topic':topic,'f-subject':{value:'biology',addEventListener(type,fn){subjectListener=fn}},'question-form':{addEventListener(type,fn){listener=fn}}};
- const context={$:id=>fields[id],subject:id=>({id,topics:Schema.topics[id]}),esc:s=>s,syncEditorSelect(id){displayed[id]=fields[id].value},checkEditorFormulas(){},localStorage:{setItem(){}},DRAFT:'draft',draft:()=>({topic:topic.value}),editingId:null,schedulePreview(){}};
+ const context={NoteSchema:Schema,$:id=>fields[id],subject:id=>({id,topics:Schema.topics[id]}),esc:s=>s,syncEditorSelect(id){displayed[id]=fields[id].value},scheduleEditorFormulaCheck(){},localStorage:{setItem(){}},DRAFT:'draft',draft:()=>({topic:topic.value}),editingId:null,schedulePreview(){}};
  vm.createContext(context);
  vm.runInContext(source.match(/  function updateEditorTopics[^\r\n]*\r?\n/)[0],context);
  vm.runInContext(source.match(/  \$\('f-subject'\)\.addEventListener\('change'[^\r\n]*\r?\n/)[0],context);

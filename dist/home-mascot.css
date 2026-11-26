@@ -9,6 +9,7 @@
 .home-mascot img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .home-mascot[data-motion="pleading"] img { transform: scale(1.20); }
 .home-mascot[data-motion="sad"] img { transform: scale(1.16); }
+.home-mascot[data-motion="crying"] img { transform: scale(1.23); }
 .home-mascot[data-motion="smug"] img { transform: scale(.96); }
 .home-mascot[data-motion="original"] img { transform: scale(1); }
 .home-mascot:hover { transform: translateY(-2px); filter: drop-shadow(0 12px 16px rgba(31,35,40,.12)); }
@@ -16,6 +17,7 @@
 .home-mascot-effect { position: absolute; inset: 7%; pointer-events: none; opacity: 0; }
 .home-mascot.is-playing[data-motion="smug"] { animation: mascot-smug 850ms cubic-bezier(.2,.8,.2,1); }
 .home-mascot.is-playing[data-motion="sad"] { animation: mascot-sad 1100ms ease-in-out; }
+.home-mascot.is-playing[data-motion="crying"] { animation: mascot-crying 900ms ease-in-out; }
 .home-mascot.is-playing[data-motion="pleading"] { animation: mascot-pleading 900ms cubic-bezier(.2,.9,.3,1); }
 .home-mascot.is-playing[data-motion="original"] { animation: mascot-original 780ms ease-in-out; }
 .home-mascot.is-playing[data-motion="sad"] .home-mascot-effect::before {
@@ -28,6 +30,11 @@
 }
 .home-mascot.is-playing .home-mascot-effect { opacity: 1; }
 @keyframes mascot-smug { 0%,100%{transform:rotate(0) translateY(0)} 22%{transform:rotate(-5deg) translateY(-3px)} 48%{transform:rotate(5deg) translateY(-5px)} 72%{transform:rotate(-2deg) translateY(-2px)} }
+@keyframes mascot-crying {
+  0%,100% { transform: translateY(0) rotate(0); }
+  18%,50%,78% { transform: translateY(3px) rotate(-3deg); }
+  34%,65% { transform: translateY(-2px) rotate(3deg); }
+}
 @keyframes mascot-sad { 0%,100%{transform:translateY(0) scaleY(1)} 35%{transform:translateY(8px) scaleY(.94)} 68%{transform:translateY(4px) scaleY(.98)} }
 @keyframes mascot-pleading { 0%,100%{transform:translateY(0) scale(1)} 38%{transform:translateY(-12px) scale(1.08)} 65%{transform:translateY(2px) scale(.98)} 82%{transform:translateY(-4px) scale(1.02)} }
 @keyframes mascot-original { 0%,100%{transform:rotate(0) scale(1)} 16%{transform:rotate(-8deg) scale(1.05)} 34%{transform:rotate(7deg) scale(1.04)} 52%{transform:rotate(-5deg) scale(1.03)} 70%{transform:rotate(4deg) scale(1.02)} 86%{transform:rotate(-2deg) scale(1.01)} }

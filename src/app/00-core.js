@@ -12,7 +12,8 @@
   let selectedSubject='',query='',topicFilters=new Set(),topicsExpanded=false,kindFilter='',statusFilter='',dateFrom='',dateTo='',todayMode=false,selectedIds=new Set(),currentPage=1,editing=false,editingId=null,previewTimer,toastTimer;
   const structuralIds={};for(const name of ['subject-nav','local-status','sync-error','page-title','page-title-icon','search-input','add-btn','collection-title','collection-count','overview','question-list','question-pagination','collection-panel','editor-panel','f-subject','f-topic','question-form','paper-size','compact-mode','show-answer','show-explanation','show-notes','single-column','double-column','preview-stage','preview-canvas','preview-empty','preview-meta','page-indicator','prev-page','next-page','print-btn','print-count','save-question-btn','status-filter','date-preset']){const el=$(name);if(!el)structuralIds[name]=false;else{if(!el.id)el.id=name;structuralIds[name]=true;}}
   const validQuestion=q=>NoteSchema.errors(q).length===0;
-  function formulaProblems(q){return ['question','answer','explanation','notes','equation'].flatMap(k=>Formula.check(q[k]||'',{equation:k==='equation'}).map(error=>({field:k,error})));}
+  const formulaFields=['question','answer','explanation','notes','equation'];
+  function formulaProblems(q,fields=formulaFields){return fields.flatMap(k=>Formula.check(q[k]||'',{equation:k==='equation'}).map(error=>({field:k,error})));}
   let librarySyncToken='';
   async function loadLocal(manual=false){
     if(polling||saving)return;
@@ -39,7 +40,38 @@
       if(manual)toast(error.message);
     }finally{polling=false;}
   }
-  async function commit(next,expectedRevision=revision,options={}){if(!ready||saving){toast('请等待本地题库连接或当前保存完成。');return false;}saving=true;try{const res=await fetch('/api/library',{method:options.mastery?'PATCH':'PUT',headers:{'Content-Type':'application/json','X-Zhixu-Local':'1','If-Match':expectedRevision},body:JSON.stringify(options.mastery?next:{version:2,questions:next.questions,settings:next.settings})});const data=await res.json();if(!res.ok)throw Error(data.error+(res.status===409&&editing?' 请保留草稿内容，取消编辑并重新打开后再保存。':''));if(options.mastery){const updates=new Map(data.updates.map(update=>[update.id,update]));state={...state,questions:state.questions.map(question=>updates.has(question.id)?{...question,...updates.get(question.id)}:question)};}else state={version:2,questions:data.questions,settings:data.settings};revision=data.revision;librarySyncToken='';$('local-status').textContent='已连接本地文件';return true;}catch(e){if(!options.silent)toast(e.message);if($('form-message'))$('form-message').textContent=e.message;return false;}finally{saving=false;}}
+  async function commit(next,expectedRevision=revision,options={}){
+    if(!ready||saving){toast('请等待本地题库连接或当前保存完成。');return false;}
+    saving=true;
+    try{
+      const partial=options.mastery||options.question||options.settings;
+      const res=await fetch('/api/library',{
+        method:partial?'PATCH':'PUT',
+        headers:{'Content-Type':'application/json','X-Zhixu-Local':'1','If-Match':expectedRevision},
+        body:JSON.stringify(partial?next:{version:2,questions:next.questions,settings:next.settings})
+      });
+      const data=await res.json();
+      if(!res.ok)throw Error(data.error+(res.status===409&&editing?' 请保留草稿内容，取消编辑并重新打开后再保存。':''));
+      if(options.mastery){
+        const updates=new Map(data.updates.map(update=>[update.id,update]));
+        state={...state,questions:state.questions.map(question=>updates.has(question.id)?{...question,...updates.get(question.id)}:question)};
+      }else if(options.question){
+        state={...state,questions:state.questions.map(question=>question.id===data.question.id?data.question:question)};
+      }else if(options.settings){
+        state={...state,settings:data.settings};
+      }else{
+        state={version:2,questions:data.questions,settings:data.settings};
+      }
+      revision=data.revision;
+      librarySyncToken='';
+      $('local-status').textContent='已连接本地文件';
+      return true;
+    }catch(e){
+      if(!options.silent)toast(e.message);
+      if($('form-message'))$('form-message').textContent=e.message;
+      return false;
+    }finally{saving=false;}
+  }
   function commitMastery(ids,mastered){return commit({ids,mastered},revision,{mastery:true});}
   function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4200);}
   const style=s=>`--subject-color:${s.color};--subject-bg:${s.bg}`;
@@ -52,7 +84,7 @@
       const target=exact[1].replace(/\s+/g,'');
       return number===target||(/^\d+$/.test(target)&&number.match(/^\d+/)?.[0]===target);
     }
-    return !keyword||[q.question,q.answer,q.explanation,q.notes,q.topic,q.equation,NoteSchema.questionSource(q),number].some(
+    return !keyword||[q.question,q.answer,q.explanation,q.notes,NoteSchema.topicName(q.subject,q.topic),q.topic,q.equation,NoteSchema.questionSource(q),number].some(
       value=>(value||'').normalize('NFKC').toLowerCase().includes(keyword)
     );
   }
