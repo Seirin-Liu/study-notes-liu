@@ -31,12 +31,17 @@
       part.file===oldFile?(newFile?marker(newFile,part.scale):''):part.raw).join('');
   }
 
+  function optionTexts(question){
+    return question.answerType==='single-choice'?Object.values(question.options||{}):[];
+  }
+
   function unplaced(question){
-    const used=new Set(fields.flatMap(key=>parts(question[key]).filter(part=>part.type==='image').map(part=>part.file)));
+    const texts=[...fields.map(key=>question[key]),...optionTexts(question)];
+    const used=new Set(texts.flatMap(text=>parts(text).filter(part=>part.type==='image').map(part=>part.file)));
     return (question.images||[]).filter(image=>image.placement!=='manual'&&!used.has(image.file));
   }
 
   function style(scale){return validScale(scale)?`width:${scale}%;`:'';}
 
-  return {parts,marker,replace,unplaced,style};
+  return {parts,marker,replace,optionTexts,unplaced,style};
 });

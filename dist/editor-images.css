@@ -10,6 +10,34 @@
 .image-text-editor:empty::before { content: attr(data-placeholder); color: #8a9099; pointer-events: none; }
 .image-text-editor.single-line { min-height: 48px; }
 #rich-question, #rich-explanation { min-height: 150px; }
+.editor-question-box {
+  border: 1px solid #d7dbe2;
+  border-radius: 8px;
+  background: #fff;
+}
+.editor-question-box:focus-within { border-color: #8eafe0; }
+#question-form .editor-question-box > :is(.image-text-editor, textarea) {
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+.editor-question-box:has(.editor-question-options:not([hidden])) #rich-question { min-height: 104px; }
+.editor-question-options {
+  margin: 0 12px 12px;
+  padding: 10px 12px;
+  border: 1px solid #e0e5ec;
+  border-radius: 7px;
+  background: #f6f8fb;
+  color: #374151;
+  font-size: 14px;
+}
+.editor-question-options h3 { margin: 0; font-size: 12px; font-weight: 650; color: #5b6777; }
+.editor-question-options .question-options { margin-top: 6px; }
+.editor-question-options .formula-atom { max-width: 100%; }
+.editor-question-options .formula-display { overflow-x: auto; }
+
 .editor-image-token {
   display: inline-flex; align-items: center; gap: 7px; vertical-align: baseline;
   margin: 2px 4px; padding: 1px 9px; border: 1px solid #c4d9f5; border-radius: 5px;
@@ -114,3 +142,89 @@ dialog.editor-image-dialog::backdrop { background: #1d253b55; }
 [data-text-color="red"], .text-color-red { color: #b42318 !important; }
 [data-text-color="blue"], .text-color-blue { color: #174ea6 !important; }
 @media print { .text-color-red, .text-color-blue { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+#question-form .editor-answer-controls { margin-bottom: 14px; }
+#question-form .editor-answer-controls > label { margin: 0; }
+#question-form .editor-answer-controls select { margin: 0; height: 42px; }
+#text-answer-field { grid-column: 1 / -1; }
+#question-form .editor-notes-field { margin: 0 0 16px; }
+#question-form .editor-notes-field > span { font-weight: 700; }
+#question-form .editor-notes-field .image-text-editor { min-height: 76px; }
+
+.editor-choice-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  min-inline-size: 0;
+  margin: 0 0 16px;
+  padding: 10px 12px 12px;
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+}
+.editor-choice-fields legend { padding: 0 5px; font-size: 14px; font-weight: 650; }
+.editor-choice-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid #d7dbe2;
+  border-radius: 8px;
+  background: #fff;
+}
+.editor-choice-option:focus-within { border-color: #8eafe0; }
+.editor-choice-option > label {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 5px 0 0;
+  border-radius: 5px;
+  background: #f1f3f6;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 700;
+}
+.editor-choice-option .image-text-editor,
+.editor-choice-option > textarea {
+  min-width: 0;
+  min-height: 38px;
+  margin: 0;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 15px;
+  line-height: 24px;
+}
+.editor-choice-option .option-insert-image {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #596779;
+}
+.editor-choice-option .option-insert-image:hover { background: #f1f5fa; color: #263f58; }
+.editor-choice-option .option-insert-image .icon { width: 18px; height: 18px; }
+@media (max-width: 640px) {
+  .editor-choice-fields { grid-template-columns: minmax(0, 1fr); }
+  .editor-choice-option .image-text-editor, .editor-choice-option > textarea { font-size: 16px; }
+}
+
+.editor-choice-option.is-correct {
+  border-color: #68a685;
+  background: #eef8f1;
+}
+.editor-choice-option.is-correct:focus-within { border-color: #2d8050; }
+.editor-choice-option.is-correct > label { background: #d9f0e1; color: #14633b; }
+.editor-question-options .question-options > .is-correct {
+  background: #e8f5ed;
+  color: #14633b;
+  border-radius: 4px;
+}

@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import http from 'node:http';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {LocalStore} from '../lib/store.mjs';
 import {Formula,Schema,formulaErrors} from '../lib/formula-engine.mjs';
 import {createApp} from '../server.mjs';
@@ -75,7 +77,10 @@ test('partial saves preserve revisions, backups and unrelated files',async()=>{
  });
  const inode=async file=>(await fs.stat(file)).ino;
  try{
-  const before=await t.store.read();
+  const sync=token=>fetch(url+'?sync='+encodeURIComponent(token)).then(response=>response.json());
+  await t.store.ensureSplit();
+  const before=await sync('');
+  assert(before.syncToken);
   const original=before.questions.find(q=>q.subject==='chemistry');
   const chemistryFile=t.store.subjectFile('chemistry');
   const biologyFile=t.store.subjectFile('biology');
@@ -85,7 +90,13 @@ test('partial saves preserve revisions, backups and unrelated files',async()=>{
   const edited=await patch(before.revision,{question:{id:original.id,changes:{explanation:'只修改解析'}}});
   assert.equal(edited.status,200);
   const edit=await edited.json();
-  assert.deepEqual(Object.keys(edit).sort(),['question','revision']);
+  assert.deepEqual(Object.keys(edit).sort(),['formulaIssues','question','revision','syncToken']);
+  assert(edit.syncToken);
+  assert.notEqual(edit.syncToken,before.syncToken);
+  assert.deepEqual(await sync(edit.syncToken),{unchanged:true});
+  const otherWindow=await sync(before.syncToken);
+  assert.equal(otherWindow.revision,edit.revision);
+  assert.equal(otherWindow.questions.find(q=>q.id===original.id).explanation,'只修改解析');
   assert.equal(edit.question.explanation,'只修改解析');
   assert.equal(edit.question.createdAt,original.createdAt);
   assert.equal(edit.question.answer,original.answer);
@@ -105,7 +116,9 @@ test('partial saves preserve revisions, backups and unrelated files',async()=>{
   const settings=await patch(edit.revision,{settings:{paper:'A4'}});
   assert.equal(settings.status,200);
   const saved=await settings.json();
-  assert.deepEqual(Object.keys(saved).sort(),['revision','settings']);
+  assert.deepEqual(Object.keys(saved).sort(),['formulaIssues','revision','settings','syncToken']);
+  assert(saved.syncToken);
+  assert.deepEqual(await sync(saved.syncToken),{unchanged:true});
   assert.deepEqual(saved.settings,{...before.settings,paper:'A4'});
   assert.equal(await inode(chemistryFile),chemistryInode);
   assert.equal(await inode(biologyFile),biologyInode);
@@ -113,8 +126,107 @@ test('partial saves preserve revisions, backups and unrelated files',async()=>{
   const after=await t.store.read();
   assert.equal(after.revision,saved.revision);
   assert.equal(after.questions.find(q=>q.id===original.id).explanation,'只修改解析');
+
+  const biology=JSON.parse(await fs.readFile(biologyFile,'utf8'));
+  biology.questions[0].notes='Codex 外部修改';
+  await fs.writeFile(biologyFile,JSON.stringify(biology));
+  const externallyUpdated=await sync(saved.syncToken);
+  assert.notEqual(externallyUpdated.revision,saved.revision);
+  assert.equal(externallyUpdated.questions.find(q=>q.id===biology.questions[0].id).notes,'Codex 外部修改');
  }finally{
   await new Promise(resolve=>server.close(resolve));
   await t.cleanup();
  }
+});
+
+test('a concurrent file edit does not get a token for a partial save response',async()=>{
+ const t=await temporary();
+ try{
+  await t.store.ensureSplit();
+  const before=await t.store.readForSync('');
+  const target=before.questions.find(question=>question.subject==='chemistry');
+  const biologyFile=t.store.subjectFile('biology');
+  const originalConfirm=t.store.confirmSavedSync.bind(t.store);
+  t.store.confirmSavedSync=async (...args)=>{
+   const biology=JSON.parse(await fs.readFile(biologyFile,'utf8'));
+   biology.questions[0].notes='保存后发生的外部修改';
+   await fs.writeFile(biologyFile,JSON.stringify(biology));
+   return originalConfirm(...args);
+  };
+
+  const save=await t.store.saveQuestion({id:target.id,changes:{notes:'网页修改'}},before.revision);
+  assert.equal(save.question.notes,'网页修改');
+  assert.equal(save.syncToken,null);
+  const full=await t.store.readForSync(save.syncToken);
+  assert.notEqual(full.revision,save.revision);
+  assert(full.questions.some(question=>question.notes==='保存后发生的外部修改'));
+ }finally{await t.cleanup();}
+});
+
+test('structured answer types validate and survive editing through partial save',async()=>{
+ const t=await temporary();
+ try{
+  const before=await t.store.read();
+  const original=before.questions[0];
+  assert.equal(original.answerType,'text');
+  const options={A:String.raw`\(x^2\)`,B:'选项二',C:'选项三',D:'选项四'};
+  const saved=await t.store.saveQuestion({
+   id:original.id,changes:{answerType:'single-choice',answer:'A',options}
+  },before.revision);
+  assert.equal(saved.question.answerType,'single-choice');
+  assert.deepEqual(saved.question.options,options);
+  assert.equal(saved.question.answer,'A');
+
+  for(const changes of [
+   {answer:'AB'},
+   {options:{A:'一',B:'二',C:'三'}},
+   {options:{...options,D:'  '}},
+   {options:{...options,C:String.raw`\(\badcommand\)`}},
+   {kind:'note'},
+   {answerType:'judgment',answer:'正确'} // Single-choice options must be cleared.
+  ]){
+   await assert.rejects(t.store.saveQuestion({id:original.id,changes},saved.revision),{status:422});
+  }
+
+  const judgment=await t.store.saveQuestion({
+   id:original.id,changes:{answerType:'judgment',answer:'错误',options:{}}
+  },saved.revision);
+  assert.equal(judgment.question.answer,'错误');
+  assert.deepEqual(judgment.question.options,{});
+  const text=await t.store.saveQuestion({
+   id:original.id,changes:{answerType:'text',answer:'分两步求解\n另见解析。'}
+  },judgment.revision);
+  assert.equal((await t.store.read()).questions[0].answer,text.question.answer);
+ }finally{await t.cleanup();}
+});
+
+test('English vocabulary markers survive editing and replacement imports',async()=>{
+ const t=await temporary();
+ try{
+  const before=await t.store.read();
+  const question={
+   id:'english-vocabulary-test',subject:'english',topic:Schema.topics.english[0],
+   question:'Read the brochure.',vocabularyProcessed:true
+  };
+  assert(Schema.errors({...question,vocabularyProcessed:'true'}).length);
+  const saved=await t.store.save({...before,questions:[...before.questions,question]},before.revision);
+  const edited=await t.store.saveQuestion({
+   id:question.id,changes:{explanation:'brochure 表示宣传册'}
+  },saved.revision);
+  assert.equal(edited.question.vocabularyProcessed,true);
+
+  const {vocabularyProcessed,...replacement}=edited.question;
+  const importFile=path.join(t.directory,'english-replacement.json');
+  await fs.writeFile(importFile,JSON.stringify({...replacement,notes:'复习词汇'}));
+  const script=fileURLToPath(new URL('../scripts/add-question.mjs',import.meta.url));
+  execFileSync(process.execPath,[script,importFile,'--replace'],{
+   env:{...process.env,ZHIXU_DATA_DIR:t.directory},stdio:'pipe'
+  });
+
+  const library=await t.store.read();
+  const stored=library.questions.find(q=>q.id===question.id);
+  assert.equal(stored.notes,'复习词汇');
+  assert.equal(stored.vocabularyProcessed,true);
+  assert.equal(library.questions.find(q=>q.id===before.questions[0].id).vocabularyProcessed,undefined);
+ }finally{await t.cleanup();}
 });

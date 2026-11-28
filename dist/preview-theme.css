@@ -190,7 +190,32 @@ body,.app-shell{background:#f7f7f8;color:#202123;}
   font-size: 25px;
 }
 #pdf-preview-close:hover { background: #f3f4f6; }
-.pdf-preview-dialog-body { overflow: auto; overscroll-behavior: contain; }
+.pdf-preview-dialog-body { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.pdf-preview-navigation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 0;
+}
+.pdf-preview-navigation button.secondary {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  width: clamp(40px, 8vw, 68px);
+  height: auto;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #4b5563;
+}
+.pdf-preview-navigation button.secondary:hover:not(:disabled) {
+  background: transparent;
+  color: #17191d;
+}
+.pdf-preview-navigation button.secondary:disabled { opacity: .35; }
+.pdf-preview-navigation button .icon { width: 30px; height: 30px; stroke-width: 2; }
+#pdf-preview-page { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
 .pdf-preview-sheet { margin: 0 auto; overflow: hidden; box-shadow: 0 2px 8px #0000001a; }
 .pdf-preview-sheet > .paper-page { transform-origin: top left; }
 

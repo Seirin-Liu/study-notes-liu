@@ -118,7 +118,7 @@
                     <option value="month30">近 30 天</option>
                     <option value="this-month">本月</option>
                     <option value="last-month">上月</option>
-                    <option value="all">全部时间</option>
+                    <option value="all" selected>全部时间</option>
                     <option value="custom">自定义</option>
                   </select></div>
                 <div id="custom-dates" class="custom-dates" hidden><label>从 <input id="date-from" type="date"
@@ -126,8 +126,8 @@
                 </div>
               </div>
               <div id="entry-kind-filter" class="segmented entry-kind-filter" role="group" aria-label="按条目类型筛选">
-                <button type="button" class="active" data-entry-kind="" aria-pressed="true">全部</button>
-                <button type="button" data-entry-kind="question" aria-pressed="false">错题</button>
+                <button type="button" data-entry-kind="" aria-pressed="false">全部</button>
+                <button type="button" class="active" data-entry-kind="question" aria-pressed="true">错题</button>
                 <button type="button" data-entry-kind="note" aria-pressed="false">笔记</button>
               </div>
             </div>
@@ -150,7 +150,8 @@
             </div>
             <div class="selection-bar"><span id="selection-summary">已选 0 道</span>
               <div id="batch-selection-tools"><button id="mark-mastered" type="button" disabled>标为已掌握</button><button id="mark-review"
-                  type="button" disabled>标为未掌握</button><button id="select-visible" type="button">全选当前结果</button><button
+                  type="button" disabled>标为未掌握</button><button id="select-visible" type="button">全选当前结果</button>
+                <button id="select-by-date" type="button" aria-haspopup="dialog" aria-controls="upload-date-dialog" disabled>按日期选择</button><button
                   id="clear-selection" type="button">清空选择</button><button id="list-answer-toggle" type="button"
                     aria-label="在题目列表中显示答案" aria-pressed="true" aria-controls="question-list"></button></div>
             </div>
@@ -203,8 +204,15 @@
                   class="wrap-button"><b>B</b></button><button type="button" data-wrap="underline"
                   title="给选中文字加下划线（__文字__）" class="wrap-button"><u>U</u></button><button type="button" data-text-color="black">黑色</button><button type="button" data-text-color="red">红色</button><button type="button" data-text-color="blue">蓝色</button></div>
               </div>
-              <textarea id="f-question" rows="4" required maxlength="20000"
-                  placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea>
+              <div class="editor-question-box">
+                <textarea id="f-question" rows="4" required maxlength="20000"
+                    placeholder="输入题目；行内公式用 \( ... \)，独立公式用 \[ ... \]。"></textarea>
+                <section id="editor-question-options" class="editor-question-options"
+                  aria-labelledby="editor-question-options-title" contenteditable="false" hidden>
+                  <h3 id="editor-question-options-title">选项预览</h3>
+                  <div id="editor-question-option-content"></div>
+                </section>
+              </div>
               <section class="editor-images" aria-labelledby="editor-images-title">
                 <header class="editor-images-heading">
                   <div>
@@ -216,9 +224,64 @@
                 <div id="editor-image-list"></div>
                 <p id="image-message" role="status"></p>
               </section>
-              <div class="form-grid"><label>答案<textarea id="f-answer" rows="3" maxlength="10000"
-                    placeholder="填写正确答案"></textarea></label><label>备注<textarea id="f-notes" rows="3" maxlength="10000"
-                    placeholder="易错原因、记忆提示…"></textarea></label></div>
+              <div class="form-grid editor-answer-controls">
+                <label id="answer-type-field" for="f-answer-type"><span>答案类型</span>
+                  <select id="f-answer-type">
+                    <option value="text">文本答案</option>
+                    <option value="judgment">判断题（正确 / 错误）</option>
+                    <option value="single-choice">单选题（A / B / C / D）</option>
+                  </select>
+                </label>
+                <label id="judgment-answer-field" for="f-judgment-answer" hidden><span>正确答案</span>
+                  <select id="f-judgment-answer">
+                    <option value="">选择判断结果</option>
+                    <option value="正确">正确</option>
+                    <option value="错误">错误</option>
+                  </select>
+                </label>
+                <label id="choice-answer-field" for="f-choice-answer" hidden><span>正确选项</span>
+                  <select id="f-choice-answer">
+                    <option value="">选择正确选项</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </label>
+                <label id="text-answer-field" for="f-answer"><span>答案</span>
+                  <textarea id="f-answer" rows="3" maxlength="10000" placeholder="填写正确答案"></textarea>
+                </label>
+              </div>
+              <fieldset id="choice-option-fields" class="editor-choice-fields" hidden>
+                <legend>单选题选项</legend>
+                <div class="editor-choice-option" data-option-key="A">
+                  <label for="f-option-A">A</label>
+                  <textarea id="f-option-A" rows="2" maxlength="10000" placeholder="选项 A 的内容"></textarea>
+                  <button type="button" class="option-insert-image" data-insert-image-field="option-A"
+                    title="插入图片" aria-label="在选项 A 中插入图片"><i data-icon="image"></i></button>
+                </div>
+                <div class="editor-choice-option" data-option-key="B">
+                  <label for="f-option-B">B</label>
+                  <textarea id="f-option-B" rows="2" maxlength="10000" placeholder="选项 B 的内容"></textarea>
+                  <button type="button" class="option-insert-image" data-insert-image-field="option-B"
+                    title="插入图片" aria-label="在选项 B 中插入图片"><i data-icon="image"></i></button>
+                </div>
+                <div class="editor-choice-option" data-option-key="C">
+                  <label for="f-option-C">C</label>
+                  <textarea id="f-option-C" rows="2" maxlength="10000" placeholder="选项 C 的内容"></textarea>
+                  <button type="button" class="option-insert-image" data-insert-image-field="option-C"
+                    title="插入图片" aria-label="在选项 C 中插入图片"><i data-icon="image"></i></button>
+                </div>
+                <div class="editor-choice-option" data-option-key="D">
+                  <label for="f-option-D">D</label>
+                  <textarea id="f-option-D" rows="2" maxlength="10000" placeholder="选项 D 的内容"></textarea>
+                  <button type="button" class="option-insert-image" data-insert-image-field="option-D"
+                    title="插入图片" aria-label="在选项 D 中插入图片"><i data-icon="image"></i></button>
+                </div>
+              </fieldset>
+              <label class="editor-notes-field" for="f-notes"><span>备注</span>
+                <textarea id="f-notes" rows="3" maxlength="10000" placeholder="易错原因、记忆提示…"></textarea>
+              </label>
               <div class="editor-field-heading">
                 <label for="f-explanation">解析</label>
                 <div class="formula-tools" data-tool-field="explanation" role="group" aria-label="解析格式"><button type="button" data-insert-image-field="explanation" class="tool-icon-button"><svg
@@ -292,8 +355,12 @@
                       data-icon="chevron-left"></i></button><span id="page-indicator">1 / 1</span><button id="next-page"
                     class="icon-button" aria-label="预览下一页"><i data-icon="chevron-right"></i></button></div>
               </div>
-              <button id="print-btn" class="print-button"><i data-icon="printer"></i>导出 PDF <span
+              <div class="print-actions">
+                <button id="optimize-print-order" type="button" class="secondary" aria-pressed="false"
+                  title="按当前排版的题目高度减少页末留白" disabled>自动调整顺序</button>
+                <button id="print-btn" class="print-button"><i data-icon="printer"></i>导出 PDF <span
                   id="print-count"></span></button>
+              </div>
             </aside>
           </div>
         </div>
@@ -303,12 +370,41 @@
   <div id="print-root" aria-hidden="true"></div>
   <div id="measure-root" aria-hidden="true"></div>
   <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="upload-date-dialog" class="upload-date-dialog" aria-labelledby="upload-date-title" aria-describedby="upload-date-scope">
+    <header>
+      <h3 id="upload-date-title">按上传日期选择</h3>
+      <p id="upload-date-scope"></p>
+    </header>
+    <section aria-label="上传日历">
+      <div class="upload-calendar-nav">
+        <button id="upload-calendar-prev" type="button" class="secondary" aria-label="上个月"><i data-icon="chevron-left"></i></button>
+        <strong id="upload-calendar-month" aria-live="polite"></strong>
+        <button id="upload-calendar-next" type="button" class="secondary" aria-label="下个月"><i data-icon="chevron-right"></i></button>
+      </div>
+      <div class="upload-calendar-weekdays" aria-hidden="true">
+        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+      </div>
+      <div id="upload-calendar-days" class="upload-calendar-days" role="group" aria-labelledby="upload-calendar-month"></div>
+    </section>
+    <footer>
+      <p id="upload-date-summary" role="status"></p>
+      <div>
+        <button id="upload-date-cancel" type="button" class="secondary" autofocus>取消</button>
+        <button id="upload-date-apply" type="button" class="primary" disabled>勾选题目</button>
+      </div>
+    </footer>
+  </dialog>
   <dialog id="pdf-preview-dialog" class="pdf-preview-dialog" aria-labelledby="pdf-preview-title">
     <header>
       <h3 id="pdf-preview-title">打印预览</h3>
+      <span id="pdf-preview-page" aria-live="polite"></span>
       <button id="pdf-preview-close" type="button" aria-label="关闭打印大图" autofocus>×</button>
     </header>
-    <section id="pdf-preview-dialog-body" class="pdf-preview-dialog-body" aria-label="放大的打印页" tabindex="0"></section>
+    <div class="pdf-preview-navigation" role="group" aria-label="放大预览翻页">
+      <button id="pdf-preview-prev" type="button" class="secondary" aria-label="上一页"><i data-icon="chevron-left"></i></button>
+      <section id="pdf-preview-dialog-body" class="pdf-preview-dialog-body" aria-label="放大的打印页" tabindex="0"></section>
+      <button id="pdf-preview-next" type="button" class="secondary" aria-label="下一页"><i data-icon="chevron-right"></i></button>
+    </div>
   </dialog>
   <dialog id="image-dialog" class="image-dialog" aria-label="题图大图"><button id="image-close" class="image-close"
       aria-label="关闭大图">×</button><img id="image-large" alt="">

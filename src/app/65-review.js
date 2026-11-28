@@ -20,19 +20,52 @@
     }
     return shuffled.slice(0,limit);
   }
-  function reviewQuestionHTML(question,index){
-    const hasSolution=['answer','explanation','equation','notes'].some(key=>question[key]);
-    const solution=[['answer','答案'],['explanation','解析'],['equation','方程式'],['notes','备注']].filter(([key])=>question[key]).map(([key,label])=>`<div><b>${label}</b>${richQuestion(question,key)}</div>`).join('');
-    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(NoteSchema.topicName(question.subject,question.topic))}</h2><div class="question-text">${richQuestion(question)}</div>${hasSolution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
+  function reviewAnswerOptions(question){
+    if(question.answerType==='judgment')return NoteSchema.judgmentAnswers;
+    if(question.answerType==='single-choice')return NoteSchema.optionKeys;
+    return [];
+  }
+  function reviewChoicesHTML(question,choices,selected){
+    if(!choices.length)return '';
+    const answered=selected!==undefined;
+    const singleChoice=question.answerType==='single-choice';
+    const rows=choices.map(key=>{
+      const isSelected=selected===key;
+      const correct=answered&&key===question.answer;
+      const state=correct?' correct':isSelected?' incorrect':'';
+      const descriptionId='review-option-text-'+key;
+      return `<div class="review-choice${state}" data-review-option="${key}">
+        <button type="button" class="review-choice-button" aria-pressed="${isSelected}" ${answered?'disabled':''}
+          ${singleChoice?`aria-describedby="${descriptionId}"`:''}>${key}</button>
+        ${singleChoice?`<div id="${descriptionId}" class="review-choice-text">${richContent(question,question.options[key])}</div>`:''}
+        ${correct?'<span class="review-choice-label">正确答案</span>':isSelected?'<span class="review-choice-label">你的选择</span>':''}
+      </div>`;
+    }).join('');
+    const correct=selected===question.answer;
+    const result=answered?(correct?'答对了。':'答错了。正确答案是 '+esc(question.answer)+'。'):'';
+    return `<div class="review-choices ${singleChoice?'review-single-choice':'review-judgment'}" role="group" aria-label="${singleChoice?'单选题':'判断题'}">${rows}</div>
+      <p class="review-answer-feedback ${correct?'correct':'incorrect'}" role="status" tabindex="-1" ${answered?'':'hidden'}>${result}</p>`;
+  }
+  function reviewQuestionHTML(question,index,selected){
+    const choices=reviewAnswerOptions(question);
+    const showSolution=!choices.length||selected!==undefined;
+    const solutionFields=[['answer','答案'],['explanation','解析'],['equation','方程式'],['notes','备注']];
+    const solution=showSolution?solutionFields.filter(([key])=>question[key])
+      .map(([key,label])=>`<div><b>${label}</b>${richQuestion(question,key)}</div>`).join(''):'';
+    return `<article class="question-card review-card"><h2>第 ${index+1} 题 · ${esc(subject(question.subject).name)} · ${esc(NoteSchema.topicName(question.subject,question.topic))}</h2>
+      <div class="question-text">${richQuestion(question)}</div>${reviewChoicesHTML(question,choices,selected)}
+      ${solution?`<details class="review-solution"><summary>查看答案和解析</summary>${solution}</details>`:''}</article>`;
   }
   function initReview(){
     const selector=$('review-subject');
+    const results=$('review-results');
+    const answers=new Map();
     let questions=[],position=0;
     function showQuestion(){
       const current=questions[position];
       $('review-progress').hidden=!current;
       $('review-pagination').hidden=!current;
-      $('review-results').innerHTML=current?reviewQuestionHTML(current,position):'';
+      results.innerHTML=current?reviewQuestionHTML(current,position,answers.get(current.id)):'';
       if(!current)return;
       const progress=$('review-progress-bar');
       progress.max=questions.length;
@@ -41,6 +74,16 @@
       $('review-prev').disabled=position===0;
       $('review-next').disabled=position===questions.length-1;
     }
+    results.addEventListener('click',event=>{
+      const row=event.target.closest('[data-review-option]');
+      const current=questions[position];
+      if(!row||!current||answers.has(current.id)||event.target.closest('[data-image]'))return;
+      const choice=row.dataset.reviewOption;
+      if(!reviewAnswerOptions(current).includes(choice))return;
+      answers.set(current.id,choice);
+      showQuestion();
+      results.querySelector('.review-answer-feedback').focus({preventScroll:true});
+    });
     $('review-prev').onclick=()=>{if(position>0){position--;showQuestion();}};
     $('review-next').onclick=()=>{if(position+1<questions.length){position++;showQuestion();}};
     for(const entry of subjects)selector.add(new Option(entry.name,entry.id));
@@ -60,6 +103,7 @@
       const scope=selector.value;
       const pool=state.questions.filter(question=>question.kind!=='note'&&(!scope||question.subject===scope));
       questions=sampleReviewQuestions(pool,count);
+      answers.clear();
       position=0;
       $('review-status').textContent=!questions.length?'所选学科暂无错题。':questions.length<count?`所选范围只有 ${questions.length} 道错题，已全部抽出。`:`已随机抽出 ${questions.length} 道题。`;
       showQuestion();

@@ -160,3 +160,39 @@
 }
 
 @media print { #review-panel { display: none !important; } }
+
+.review-choices { display: grid; gap: 8px; margin-top: 16px; }
+.review-judgment { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 400px); }
+.review-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 48px;
+  padding: 6px 12px;
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.review-judgment .review-choice { grid-template-columns: minmax(0, 1fr); text-align: center; }
+.review-choice:not(:has(button:disabled)):is(:hover, :focus-within) { border-color: #397ac5; background: #f3f7ff; }
+.review-choice:has(button:disabled) { cursor: default; }
+.review-choice .review-choice-button {
+  min-width: 32px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid #d8dee4;
+  border-radius: 6px;
+  background: #f6f7f8;
+  color: inherit;
+  font-weight: 650;
+}
+.review-choice .review-choice-button:disabled { opacity: 1; }
+.review-choice-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-choice.correct { border-color: #63a682; background: #edf8f1; }
+.review-choice.incorrect { border-color: #d78b83; background: #fff2f0; }
+.review-choice-label { grid-column: 1 / -1; font-size: 12px; font-weight: 600; }
+.review-answer-feedback { margin: 12px 0 0; font-size: 14px; font-weight: 650; }
+.review-answer-feedback.correct, .review-choice.correct .review-choice-label { color: #14633b; }
+.review-answer-feedback.incorrect, .review-choice.incorrect .review-choice-label { color: #a12722; }

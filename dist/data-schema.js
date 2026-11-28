@@ -29,9 +29,41 @@
   }
   function topicName(subject,value){return topicCatalog[subject]?.[topicId(subject,value)]||value||'';}
   const kinds=['question','note'];
+  const answerTypes=['text','judgment','single-choice'];
+  const judgmentAnswers=['正确','错误'];
+  const optionKeys=['A','B','C','D'];
+  const optionFields=optionKeys.map(key=>'option-'+key);
   const limits={source:120,originalNumber:40,question:20000,answer:10000,explanation:20000,notes:10000,equation:2000,equationPlain:2000};
   const imageName=/^[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/i;
-  function errors(q){const out=[];if(!q||typeof q!=='object'||Array.isArray(q))return ['题目必须是一个 JSON 对象'];if(!subjects.includes(q.subject))out.push('学科必须为 chemistry、biology、math、physics、chinese 或 english');if(typeof q.id!=='string'||!/^[-a-zA-Z0-9_]{1,80}$/.test(q.id))out.push('id 只能含英文字母、数字、连字符和下划线，长度 1—80');if(typeof q.topic!=='string'||!q.topic.trim()||q.topic.length>60)out.push('专题必填，最多 60 字');if(typeof q.topic==='string'&&subjects.includes(q.subject)&&!topicId(q.subject,q.topic))out.push('题目类别必须从该学科规定的类别中选择');if(typeof q.question!=='string'||!q.question.trim())out.push('题目不能为空');for(const[k,n]of Object.entries(limits))if(q[k]!==undefined&&(typeof q[k]!=='string'||q[k].length>n))out.push(k+' 必须是字符串，且不超过 '+n+' 字');if(q.kind!==undefined&&!kinds.includes(q.kind))out.push('条目类型必须为 question（错题）或 note（笔记）');if(q.mastered!==undefined&&typeof q.mastered!=='boolean')out.push('mastered 必须为布尔值');if(q.images!==undefined){if(!Array.isArray(q.images)||q.images.length>20)out.push('images 必须为最多 20 张的数组');else for(const image of q.images){if(!image||typeof image!=='object'||!imageName.test(image.file||'')||typeof image.alt!=='string'||image.alt.length>200)out.push('题图需有安全文件名和不超过 200 字的说明');if(image&&image.placement!==undefined&&image.placement!=='manual')out.push('题图 placement 仅支持 manual（手动插入）');}}return out;}
+  function answerErrors(q){
+    const type=q.answerType===undefined?'text':q.answerType;
+    if(!answerTypes.includes(type))return ['请选择有效的答案类型。'];
+    if(q.kind==='note'&&type!=='text')return ['笔记仅支持文本答案。'];
+    const options=q.options;
+    const optionObject=options!==null&&typeof options==='object'&&!Array.isArray(options);
+    const issues=[];
+    if(type==='single-choice'){
+      if(!optionObject||Object.keys(options).length!==optionKeys.length||
+        optionKeys.some(key=>!Object.hasOwn(options,key)||typeof options[key]!=='string'||!options[key].trim()||options[key].length>limits.answer)){
+        issues.push('单选题须填写 A、B、C、D 四个选项，每项最多 '+limits.answer+' 字。');
+      }
+      if(!optionKeys.includes(q.answer))issues.push('请选择 A、B、C、D 中的一个作为正确答案。');
+    }else{
+      if(options!==undefined&&(!optionObject||Object.keys(options).length))issues.push('只有单选题可以填写 A、B、C、D 选项。');
+      if(type==='judgment'&&!judgmentAnswers.includes(q.answer))issues.push('请选择「正确」或「错误」作为判断题答案。');
+    }
+    return issues;
+  }
+  function fieldText(q,field){
+    if(optionFields.includes(field))return q.answerType==='single-choice'?q.options?.[field.at(-1)]||'':'';
+    return q[field]||'';
+  }
+  function errors(q){const out=[];if(!q||typeof q!=='object'||Array.isArray(q))return ['题目必须是一个 JSON 对象'];if(!subjects.includes(q.subject))out.push('学科必须为 chemistry、biology、math、physics、chinese 或 english');if(typeof q.id!=='string'||!/^[-a-zA-Z0-9_]{1,80}$/.test(q.id))out.push('id 只能含英文字母、数字、连字符和下划线，长度 1—80');if(typeof q.topic!=='string'||!q.topic.trim()||q.topic.length>60)out.push('专题必填，最多 60 字');if(typeof q.topic==='string'&&subjects.includes(q.subject)&&!topicId(q.subject,q.topic))out.push('题目类别必须从该学科规定的类别中选择');if(typeof q.question!=='string'||!q.question.trim())out.push('题目不能为空');for(const[k,n]of Object.entries(limits))if(q[k]!==undefined&&(typeof q[k]!=='string'||q[k].length>n))out.push(k+' 必须是字符串，且不超过 '+n+' 字');if(q.kind!==undefined&&!kinds.includes(q.kind))out.push('条目类型必须为 question（错题）或 note（笔记）');out.push(...answerErrors(q));if(q.mastered!==undefined&&typeof q.mastered!=='boolean')out.push('mastered 必须为布尔值');if(q.images!==undefined){if(!Array.isArray(q.images)||q.images.length>20)out.push('images 必须为最多 20 张的数组');else for(const image of q.images){if(!image||typeof image!=='object'||!imageName.test(image.file||'')||typeof image.alt!=='string'||image.alt.length>200)out.push('题图需有安全文件名和不超过 200 字的说明');if(image&&image.placement!==undefined&&image.placement!=='manual')out.push('题图 placement 仅支持 manual（手动插入）');}}
+    if(q.vocabularyProcessed!==undefined&&typeof q.vocabularyProcessed!=='boolean'){
+      out.push('vocabularyProcessed 必须为布尔值。');
+    }
+    return out;
+  }
   function originalNumber(q){
     if(typeof q.originalNumber==='string')return q.originalNumber.trim();
     const line=(q.question||'').split('\n',1)[0];
@@ -48,7 +80,10 @@
     const paper=match[1].trim().replace(/[·｜|\-]+\s*$/u,'').trim();
     return paper+' 第'+match[2]+'题'+(match[3]||'').replace(/\s+/g,'');
   }
-  function normalize(q){const result={id:q.id,subject:q.subject,topic:topicId(q.subject,q.topic)||q.topic.trim(),kind:q.kind??'question'};for(const k of Object.keys(limits))result[k]=q[k]||'';result.originalNumber=originalNumber(q);result.source=questionSource(q);result.images=(q.images||[]).map(image=>({file:image.file,alt:image.alt,...(image.placement==='manual'?{placement:'manual'}:{})}));result.mastered=!!q.mastered;result.demo=!!q.demo;result.createdAt=typeof q.createdAt==='string'?q.createdAt:new Date().toISOString();result.updatedAt=typeof q.updatedAt==='string'?q.updatedAt:result.createdAt;return result;}
+  function normalize(q){const result={id:q.id,subject:q.subject,topic:topicId(q.subject,q.topic)||q.topic.trim(),kind:q.kind??'question'};for(const k of Object.keys(limits))result[k]=q[k]||'';result.answerType=q.answerType??'text';result.options=result.answerType==='single-choice'?Object.fromEntries(optionKeys.map(key=>[key,q.options[key].trim()])):{};result.originalNumber=originalNumber(q);result.source=questionSource(q);result.images=(q.images||[]).map(image=>({file:image.file,alt:image.alt,...(image.placement==='manual'?{placement:'manual'}:{})}));result.mastered=!!q.mastered;result.demo=!!q.demo;result.createdAt=typeof q.createdAt==='string'?q.createdAt:new Date().toISOString();result.updatedAt=typeof q.updatedAt==='string'?q.updatedAt:result.createdAt;
+    if(typeof q.vocabularyProcessed==='boolean')result.vocabularyProcessed=q.vocabularyProcessed;
+    return result;
+  }
   function settings(input={}){const answers=input.answers!==false;return {paper:input.paper==='A4'?'A4':'B5',columns:input.columns===1?1:2,compact:input.compact!==false,answers,answer:input.answer===undefined?answers:input.answer!==false,explanation:input.explanation===undefined?answers:input.explanation!==false,notes:input.notes===undefined?answers:input.notes!==false};}
-  return {errors,normalize,originalNumber,questionSource,settings,subjects,topics,topicId,topicName,limits};
+  return {errors,answerErrors,fieldText,normalize,originalNumber,questionSource,settings,subjects,topics,topicId,topicName,limits,answerTypes,judgmentAnswers,optionKeys,optionFields};
 });

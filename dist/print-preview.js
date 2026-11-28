@@ -7,9 +7,19 @@
  function page(title,number,s){const e=document.createElement('div');e.className=`paper-page ${s.paper==='A4'?'a4':''} columns-${s.columns} ${s.compact?'compact':''}`;const labels=['题目',...Object.entries({answer:'答案',explanation:'解析',notes:'备注'}).filter(([key])=>shown(s,key)).map(([,label])=>label)],mascot=window.currentMascotSrc||'/brand-dog.png';e.innerHTML=`<div class="paper-head"><h3>${esc(title)}</h3><img class="paper-brand-dog" src="${esc(mascot)}" alt="小狗图标"></div><div class="paper-columns">${Array.from({length:s.columns},()=>'<div class="paper-column"></div>').join('')}</div><div class="paper-foot"><span>${labels.join(' · ')}</span><span>第 ${number} 页</span></div>`;return e;}
  function imageSource(q,image){return /^data:image\/(?:png|jpeg|webp);base64,/i.test(image.preview||'')?image.preview:`/assets/${encodeURIComponent(q.id)}/${encodeURIComponent(image.file)}`;}
  function imageHTML(q,image,scale=null){const src=imageSource(q,image),size=ImageReferences.style(scale);return `<figure class="print-image"${size?` data-image-scale="${scale}" style="${size}"`:''}><img src="${esc(src)}" data-image="${esc(src)}" data-alt="${esc(image.alt)}" alt="${esc(image.alt)}"><figcaption>${esc(image.alt)}</figcaption></figure>`;}
- function rich(q,key){let html=ImageReferences.parts(q[key]).map(part=>{if(part.type==='text')return Formula.render(part.value,{equation:key==='equation'});const image=(q.images||[]).find(x=>x.file===part.file);return image?imageHTML(q,image,part.scale):esc(part.raw);}).join('');if(key==='question')html+=ImageReferences.unplaced(q).map(image=>imageHTML(q,image)).join('');return html;}
- function renderedImages(q,s){const used=new Set(['question','answer','equation','explanation','notes'].filter(key=>shown(s,key)).flatMap(key=>ImageReferences.parts(q[key]).filter(part=>part.type==='image').map(part=>part.file)));const fallback=new Set(ImageReferences.unplaced(q).map(image=>image.file));return (q.images||[]).filter(image=>used.has(image.file)||fallback.has(image.file));}
- function blockHTML(q,n,s,names){let html=`<div class="print-prompt"><h4 class="print-q-title">${n}. ${esc(names[q.subject])} / ${esc(NoteSchema.topicName(q.subject,q.topic))}</h4><div class="print-body">${rich(q,'question')||'请在左侧输入题目…'}</div></div>`;for(const[k,label,cls]of[['answer','答案','print-answer'],['equation','方程式','print-equation'],['explanation','解析','print-explanation'],['notes','备注','print-notes']])if(q[k]&&shown(s,k)){const underline=k==='answer'&&!q.answer.includes('[[image:');html+=`<div class="${cls}"><b>${label}：</b>${underline?'<u>':''}${rich(q,k)}${underline?'</u>':''}</div>`;}if(!['answer','explanation','notes'].some(key=>shown(s,key)))html+='<div class="answer-space"></div>';return html;}
+ function rich(q,key){let html=ImageReferences.parts(NoteSchema.fieldText(q,key)).map(part=>{if(part.type==='text')return Formula.render(part.value,{equation:key==='equation'});const image=(q.images||[]).find(x=>x.file===part.file);return image?imageHTML(q,image,part.scale):esc(part.raw);}).join('');if(key==='question')html+=ImageReferences.unplaced(q).map(image=>imageHTML(q,image)).join('');return html;}
+ function renderedImages(q,s){
+  const texts=['question','answer','equation','explanation','notes'].filter(key=>shown(s,key)).map(key=>q[key]);
+  const used=new Set([...texts,...ImageReferences.optionTexts(q)].flatMap(text=>ImageReferences.parts(text))
+   .filter(part=>part.type==='image').map(part=>part.file));
+  const fallback=new Set(ImageReferences.unplaced(q).map(image=>image.file));
+  return (q.images||[]).filter(image=>used.has(image.file)||fallback.has(image.file));
+ }
+ function blockHTML(q,n,s,names){let html=`<div class="print-prompt"><h4 class="print-q-title">${n}. ${esc(names[q.subject])} / ${esc(NoteSchema.topicName(q.subject,q.topic))}</h4><div class="print-body">${rich(q,'question')||'请在左侧输入题目…'}</div></div>`;
+  if(q.answerType==='single-choice'){
+   html+=NoteSchema.optionFields.map(field=>`<div class="print-choice">${field.at(-1)}. ${rich(q,field)}</div>`).join('');
+  }
+  for(const[k,label,cls]of[['answer','答案','print-answer'],['equation','方程式','print-equation'],['explanation','解析','print-explanation'],['notes','备注','print-notes']])if(q[k]&&shown(s,k)){const underline=k==='answer'&&!q.answer.includes('[[image:');html+=`<div class="${cls}"><b>${label}：</b>${underline?'<u>':''}${rich(q,k)}${underline?'</u>':''}</div>`;}if(!['answer','explanation','notes'].some(key=>shown(s,key)))html+='<div class="answer-space"></div>';return html;}
  // Formula nodes are indivisible. Only surrounding prose may break across columns/pages.
  function units(element){const result=[];const FORMAT=new Set(['STRONG','U','B','EM','I','MARK','SPAN']);
  // 每个字符记录其所在的格式标签链，重组时可还原
@@ -35,11 +45,60 @@
   else if(typeof item==='string'){flush();chain=null;text+=item;}
   else{flush();chain=null;f.append(item.cloneNode(true));}}
  flush();return f;}
- async function render(items,s,title,names){const token=++renderToken;const assets=[...new Set(["/brand-dog.png",...items.flatMap(q=>renderedImages(q,s).map(image=>imageSource(q,image)))])];try{await Promise.all(assets.map(src=>new Promise((resolve,reject)=>{const image=new Image();image.onload=resolve;image.onerror=()=>reject(Error('题图无法加载，请检查该题的图片。'));image.src=src;})));}catch(error){if(token!==renderToken)return;throw error;}if(token!==renderToken)return;pages=[];index=0;const measure=$('measure-root');measure.replaceChildren();$('print-root').replaceChildren();$('preview-canvas').replaceChildren();$('preview-empty').hidden=!!items.length;$('print-btn').disabled=!items.length;$('print-count').textContent=items.length?items.length+' 题':'';if(!items.length){$('page-indicator').textContent='0 / 0';$('prev-page').disabled=true;$('next-page').disabled=true;return;}
+ function questionBlock(q,number,s,names){
+  const block=document.createElement('section');
+  block.className='print-question';
+  block.innerHTML=blockHTML(q,number,s,names);
+  return block;
+ }
+ function usedHeight(col){
+  const last=col.lastElementChild;
+  return last?last.getBoundingClientRect().bottom-col.getBoundingClientRect().top+parseFloat(getComputedStyle(last).marginBottom):0;
+ }
+ // Place each complete question in the tightest available column. Oversized
+ // questions still go through regular pagination so their content can split.
+ function packQuestionOrder(heights,capacity){
+  const bins=[],oversized=[];
+  const sorted=heights.map((height,index)=>({height,index})).sort((a,b)=>b.height-a.height||a.index-b.index);
+  for(const {height,index} of sorted){
+   if(height>capacity){oversized.push(index);continue;}
+   let best=null;
+   for(const bin of bins){
+    if(bin.remaining>=height&&(!best||bin.remaining<best.remaining))best=bin;
+   }
+   if(!best){best={remaining:capacity,items:[]};bins.push(best);}
+   best.items.push(index);
+   best.remaining-=height;
+  }
+  return [...oversized.sort((a,b)=>a-b),...bins.sort((a,b)=>a.remaining-b.remaining).flatMap(bin=>bin.items)];
+ }
+ function measureQuestionOrder(items,s,title,names,measure){
+  const probe=page(title,1,s);
+  measure.append(probe);
+  const col=probe.querySelector('.paper-column');
+  const capacity=col.clientHeight;
+  // Measure using the widest question number to avoid underestimating wrapped headings.
+  const heights=items.map(q=>{
+   const block=questionBlock(q,items.length,s,names);
+   col.replaceChildren(block);
+   fitAtoms(block,col.clientWidth,capacity*.8);
+   return Math.ceil(usedHeight(col));
+  });
+  probe.remove();
+  return packQuestionOrder(heights,capacity);
+ }
+ function layoutScore(pages){
+  const columns=pages.flatMap(p=>[...p.querySelectorAll('.paper-column')]);
+  while(columns.length&&!columns.at(-1).childElementCount)columns.pop();
+  columns.pop();
+  return {pages:pages.length,gap:columns.reduce((sum,col)=>sum+Math.max(0,col.clientHeight-usedHeight(col)),0)};
+ }
+ function paginate(items,s,title,names,measure){
+  const pages=[];
   let ci=0,current=page(title,1,s);measure.append(current);pages.push(current);let columns=current.querySelectorAll('.paper-column'),col=columns[0];
   function advance(){ci++;if(ci>=columns.length){current=page(title,pages.length+1,s);measure.append(current);pages.push(current);columns=current.querySelectorAll('.paper-column');ci=0;}col=columns[ci];}
   const fits=()=>col.scrollHeight<=col.clientHeight+1;
-  items.forEach((q,n)=>{const block=document.createElement('section');block.className='print-question';block.innerHTML=blockHTML(q,n+1,s,names);col.append(block);fitAtoms(block,col.clientWidth,col.clientHeight*.8);if(fits())return;block.remove();
+  items.forEach((q,n)=>{const block=questionBlock(q,n+1,s,names);col.append(block);fitAtoms(block,col.clientWidth,col.clientHeight*.8);if(fits())return;block.remove();
    const parts=[...block.children];let section=document.createElement('section');section.className='print-question';col.append(section);
    for(let part of parts){section.append(part);if(fits())continue;const tallerThanColumn=part.getBoundingClientRect().height>col.clientHeight;part.remove();if(part.classList.contains('print-prompt')&&!section.childNodes.length){section.remove();advance();section=document.createElement('section');section.className='print-question';col.append(section);}else if(section.childNodes.length&&!tallerThanColumn){advance();section=document.createElement('section');section.className='print-question continued';section.innerHTML=`<h4 class="print-q-title">${n+1}. ${esc(NoteSchema.topicName(q.subject,q.topic))}（续）</h4>`;col.append(section);}section.append(part);if(fits())continue;
     const tokens=units(part);part.replaceChildren();let offset=0;
@@ -49,10 +108,31 @@
     }
    }
   });
-  pages=pages.map(p=>p.cloneNode(true));measure.replaceChildren();for(const p of pages)$('print-root').append(p.cloneNode(true));$('dynamic-print-style').textContent=`@page { size: ${s.paper==='B5'?'176mm 250mm':'210mm 297mm'}; margin: 0; }`;$('preview-meta').textContent=`${s.paper} · ${s.columns===2?'双栏':'单栏'} · ${s.compact?'约 9 pt':'约 10 pt'}`;
+  return pages;
+ }
+ async function render(items,s,title,names,optimize=false){const token=++renderToken;const assets=[...new Set(["/brand-dog.png",...items.flatMap(q=>renderedImages(q,s).map(image=>imageSource(q,image)))])];try{await Promise.all(assets.map(src=>new Promise((resolve,reject)=>{const image=new Image();image.onload=resolve;image.onerror=()=>reject(Error('题图无法加载，请检查该题的图片。'));image.src=src;})));}catch(error){if(token!==renderToken)return;throw error;}if(token!==renderToken)return;index=0;const measure=$('measure-root');measure.replaceChildren();$('print-root').replaceChildren();$('preview-canvas').replaceChildren();$('preview-empty').hidden=!!items.length;$('print-btn').disabled=!items.length;$('print-count').textContent=items.length?items.length+' 题':'';if(!items.length){pages=[];$('page-indicator').textContent='0 / 0';$('prev-page').disabled=true;$('next-page').disabled=true;notifyPageShown();return;}
+  try{
+   const original=paginate(items,s,title,names,measure);
+   pages=original;
+   if(optimize&&items.length>1){
+    const originalScore=layoutScore(original);
+    measure.replaceChildren();
+    const order=measureQuestionOrder(items,s,title,names,measure);
+    if(order.some((index,position)=>index!==position)){
+     const candidate=paginate(order.map(index=>items[index]),s,title,names,measure);
+     const score=layoutScore(candidate);
+     if(score.pages<originalScore.pages||
+       (score.pages===originalScore.pages&&score.gap<originalScore.gap-1))pages=candidate;
+    }
+   }
+  }finally{
+   measure.replaceChildren();
+  }
+  for(const p of pages)$('print-root').append(p.cloneNode(true));$('dynamic-print-style').textContent=`@page { size: ${s.paper==='B5'?'176mm 250mm':'210mm 297mm'}; margin: 0; }`;$('preview-meta').textContent=`${s.paper} · ${s.columns===2?'双栏':'单栏'} · ${s.compact?'约 9 pt':'约 10 pt'}`;
   const invalid=$('print-root').querySelector('.formula-error');$('print-btn').disabled=!!invalid;if(invalid)$('preview-meta').textContent='有公式待修正，暂不可打印';show();
  }
- function show(){if(!pages.length)return;const holder=document.createElement('div');holder.className='preview-page-holder';holder.append(pages[index].cloneNode(true));$('preview-canvas').replaceChildren(holder);scale();$('page-indicator').textContent=`${index+1} / ${pages.length}`;$('prev-page').disabled=index===0;$('next-page').disabled=index===pages.length-1;}
+ function notifyPageShown(){$('preview-canvas').dispatchEvent(new Event('printpreviewpagechange'));}
+ function show(){if(!pages.length)return;const holder=document.createElement('div');holder.className='preview-page-holder';holder.append(pages[index].cloneNode(true));$('preview-canvas').replaceChildren(holder);scale();$('page-indicator').textContent=`${index+1} / ${pages.length}`;$('prev-page').disabled=index===0;$('next-page').disabled=index===pages.length-1;notifyPageShown();}
  function scale(){const holder=document.querySelector('.preview-page-holder');if(!holder)return;const p=holder.firstElementChild,w=Math.max(100,Math.min($('preview-stage').clientWidth-22,420)),s=w/p.offsetWidth;holder.style.width=w+'px';holder.style.height=p.offsetHeight*s+'px';p.style.transform=`scale(${s})`;}
- window.Printer={render,previous(){if(index>0){index--;show();}},next(){if(index<pages.length-1){index++;show();}},scale};
+ window.Printer={render,previous(){if(index>0){index--;show();}},next(){if(index<pages.length-1){index++;show();}},last(){if(index<pages.length-1){index=pages.length-1;show();}},scale};
 })();

@@ -99,3 +99,16 @@ test('manual upload and occurrence scales survive saving and reloading through t
   assert.deepEqual(refs.parts(reloaded.question).filter(x=>x.type==='image').map(x=>x.scale),[50,75]);
  }finally{await new Promise(resolve=>server.close(resolve));await fs.rm(dir,{recursive:true,force:true});}
 });
+
+test('printed choice options and their images remain visible with answers hidden',()=>{
+ const question={
+  ...sample,question:'选择正确的图',answerType:'single-choice',answer:'B',
+  options:{A:'这个选项没有图',B:'[[image:graph.png|50%]]',C:'选项三',D:'选项四'}
+ };
+ const settings={answers:false};
+ const html=templates.blockHTML(question,1,settings,{math:'数学'});
+ assert.equal((html.match(/class="print-choice"/g)||[]).length,4);
+ assert(!html.includes('class="print-answer"'));
+ assert.match(html,/print-choice">B\. <figure/);
+ assert.deepEqual(Array.from(templates.renderedImages(question,settings),image=>image.file),['graph.png','legacy.png']);
+});

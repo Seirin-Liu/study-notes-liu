@@ -1,17 +1,34 @@
 // 打印预览与保存设置的联动，以及富文本字段的定位工具。
-  let previewJob;
-  function updatePreview(force=false){
+  let previewJob, optimizePrintOrder=false;
+  const optimizeButton=$('optimize-print-order');
+  function updatePreview(force=false,showLastPage=false){
     clearTimeout(previewTimer);
     const items=editing?[draft()]:selectedSubject?selectedQuestions():[];
+    const optimize=!editing&&items.length>1&&optimizePrintOrder;
+    optimizeButton.disabled=editing||items.length<2;
+    optimizeButton.setAttribute('aria-pressed',String(optimize));
+    optimizeButton.textContent=optimize?'恢复勾选顺序':'自动调整顺序';
     const title=editing?subject($('f-subject').value).name+'错题专题集':titleFor();
-    const key=JSON.stringify([title,state.settings,items.map(({id,subject,topic,question,answer,explanation,notes,equation,images})=>[
-      id,subject,topic,question,answer,explanation,notes,equation,images
+    const key=JSON.stringify([title,state.settings,optimize,items.map(({id,subject,topic,question,answer,answerType,options,explanation,notes,equation,images})=>[
+      id,subject,topic,question,answer,answerType,options,explanation,notes,equation,images
     ])]);
-    if(!force&&previewJob?.key===key)return previewJob.promise;
+    if(!force&&previewJob?.key===key){
+      if(showLastPage){
+        if(previewJob.pending)previewJob.showLastPage=true;
+        else Printer.last();
+      }
+      return previewJob.promise;
+    }
 
-    const job={key};
+    const job={
+      key,pending:true,
+      showLastPage:showLastPage||(previewJob?.key===key&&previewJob.pending&&previewJob.showLastPage)
+    };
     previewJob=job;
-    job.promise=Printer.render(items,state.settings,title,Object.fromEntries(subjects.map(s=>[s.id,s.name]))).catch(error=>{
+    job.promise=Printer.render(items,state.settings,title,Object.fromEntries(subjects.map(s=>[s.id,s.name])),optimize).then(()=>{
+      job.pending=false;
+      if(previewJob===job&&job.showLastPage)Printer.last();
+    }).catch(error=>{
       if(previewJob!==job)return;
       previewJob=null;
       $('preview-meta').textContent='预览失败：'+error.message;
@@ -19,6 +36,10 @@
     });
     return job.promise;
   }
+  optimizeButton.onclick=()=>{
+    optimizePrintOrder=!optimizePrintOrder;
+    updatePreview();
+  };
   $('prev-page').onclick=()=>Printer.previous();$('next-page').onclick=()=>Printer.next();window.addEventListener('resize',Printer.scale);window.addEventListener('resize',()=>{if(selectedSubject)renderTopics();});$('print-btn').onclick=async()=>{await updatePreview();if(!$('print-btn').disabled)window.print();};
   const previewCanvas = $('preview-canvas');
   const previewDialog = $('pdf-preview-dialog');
@@ -38,18 +59,34 @@
       paper.style.transform = 'scale(' + scale + ')';
     }
 
-    function enlargeCurrentPage() {
+    const previousEnlargedPage = $('pdf-preview-prev');
+    const nextEnlargedPage = $('pdf-preview-next');
+
+    function refreshEnlargedPage() {
+      if (!previewDialog.open) return;
       const paper = previewCanvas.querySelector('.paper-page');
-      if (!paper || previewDialog.open) return;
+      if (!paper) { previewDialog.close(); return; }
 
       const holder = document.createElement('div');
       holder.className = 'pdf-preview-sheet';
       holder.append(paper.cloneNode(true));
       previewDialogBody.replaceChildren(holder);
-      previewDialog.showModal();
+      $('pdf-preview-page').textContent = $('page-indicator').textContent;
+      previousEnlargedPage.disabled = $('prev-page').disabled;
+      nextEnlargedPage.disabled = $('next-page').disabled;
       fitEnlargedPage();
       previewDialogBody.scrollTop = 0;
     }
+
+    function enlargeCurrentPage() {
+      if (previewDialog.open || !previewCanvas.querySelector('.paper-page')) return;
+      previewDialog.showModal();
+      refreshEnlargedPage();
+    }
+
+    previousEnlargedPage.addEventListener('click', () => Printer.previous());
+    nextEnlargedPage.addEventListener('click', () => Printer.next());
+    previewCanvas.addEventListener('printpreviewpagechange', refreshEnlargedPage);
 
     previewCanvas.addEventListener('click', event => {
       if (event.target.closest('.paper-page') && !event.target.closest('[data-image]')) {

@@ -2,12 +2,13 @@
 
 用户在 Codex 发题时，将题干、答案、完整解析、备注分别写入标准 JSON；所有数学/物理公式和化学式使用 KaTeX 支持的 LaTeX。
 
-- 阅读 `QUESTION_FORMAT.md`；默认调用 `node scripts/add-question.mjs <题目.json>` 写入 `data/questions.json`。不要改应用代码来录入题目。
+- 阅读 `QUESTION_FORMAT.md`；默认调用 `node scripts/add-question.mjs <题目.json>` 写入 `data/subjects/<学科>.json`。不要改应用代码来录入题目。
 - 行内公式使用 `\(...\)`；独立公式使用 `\[...\]`；化学式在公式内用 `\ce{...}`。JSON 字符串中的每个反斜杠写成 `\\`。
 - 核对原题、答案、推导、方程式系数、电荷、反应条件和用量。无法辨认的内容应询问，不能凭空补题。
 - 化学反应在 `equation` 中保存排版式，在 `equationPlain` 中保存可核查的普通文本式；离子电荷用 `^2-` 或 `^+`。
-- 不改变题号或擅自扩充用户选择的选项；按四科学科归档。`topic` 必须严格选用 `data/topics.json` 中对应学科的一个类别，不得自造、细分或沿用旧类别；无法判定时先核对题意。
+- 不改变题号或擅自扩充用户选择的选项；按对应学科归档。`topic` 必须严格选用 `data/topics.json` 中对应学科的一个类别，不得自造、细分或沿用旧类别；无法判定时先核对题意。
 - 每题使用稳定且唯一的 ASCII `id`，例 `chemistry-sulfur-20261112-01`。同 id 更新时先读取当前题库，确认目标，再用 `--replace`。
+- 英语词汇整理按 `docs/LOCAL_CODEX_WORKFLOW.md` 执行。跳过 `vocabularyProcessed: true` 的题，确认词表写入成功后再标记本批题目。
 - 写入后运行 `node scripts/validate.mjs` 和必要的化学/推导核对。语法校验通过不等于学科结论正确。
 - 网页运行时会自动同步文件。默认 B5、双栏、小字、答案加下划线，保留打印预览。
 - 本地模式不调用 Sites 部署，不提交题库到远程，也不擅自更改已有私密站点。
@@ -25,7 +26,7 @@
 
 ## 前端源码与构建
 
-- 前端源码在 `src/app/*.js`，按职责分为 9 个模块（core / format / render / mascot / selection / editor / preview / rich-text / boot）。**改前端逻辑请改 `src/app/`，不要直接改 `dist/app.js`**，后者由构建覆盖。
+- 前端源码在 `src/app/*.js`，构建顺序见 `scripts/build-app.mjs`。**改前端逻辑请改 `src/app/`，不要直接改 `dist/app.js`**，后者由构建覆盖。
 - 改完运行 `npm run build`（即 `node scripts/build-app.mjs`）生成 `dist/app.js`。它是单个 IIFE，所有模块共享同一闭包，浏览器仍只加载一个 `/app.js`，不使用全局变量。
 - `tests/build.test.cjs` 会检查 `dist/app.js` 与 `src/app/` 是否同步；忘记构建时测试失败。
 - 不改录题数据协议；前端改动后需跑 `node --test tests/*.test.cjs tests/*.test.mjs` 与 `node scripts/validate.mjs`。

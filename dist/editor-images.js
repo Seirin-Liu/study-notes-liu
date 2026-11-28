@@ -1,8 +1,10 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  const fields = ['question', 'answer', 'explanation', 'notes'];
-  const labels = {question: '题目', answer: '答案', explanation: '解析', notes: '备注'};
+  const optionFields = ['A', 'B', 'C', 'D'].map(key => 'option-' + key);
+  const fields = ['question', 'answer', 'explanation', 'notes', ...optionFields];
+  const labels = {question: '题目', answer: '答案', explanation: '解析', notes: '备注',
+    ...Object.fromEntries(optionFields.map(field => [field, '选项 ' + field.at(-1)]))};
   const escape = value => Formula.escape(String(value));
 
   // Serialize editable image chips and colored spans back to their stored markers.
@@ -84,6 +86,7 @@
     setupEditors() {
       for (const field of fields) {
         const input = $('f-' + field);
+        if (!input) continue;
         const editor = document.createElement('div');
         editor.id = 'rich-' + field;
         editor.className = 'image-text-editor' + (input.tagName === 'INPUT' ? ' single-line' : '');
@@ -265,7 +268,7 @@
     marker(oldFile, newFile) {
       for (const field of fields) {
         const input = $('f-' + field);
-        input.value = ImageReferences.replace(input.value, oldFile, newFile);
+        if (input) input.value = ImageReferences.replace(input.value, oldFile, newFile);
       }
       this.syncFields();
     }
